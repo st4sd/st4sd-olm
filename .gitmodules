@@ -1,0 +1,3 @@
+[submodule "st4sd-deployment"]
+	path = st4sd-deployment
+	url = https://github.com/st4sd/st4sd-deployment.git
