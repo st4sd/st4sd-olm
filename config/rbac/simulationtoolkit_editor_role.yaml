@@ -1,0 +1,31 @@
+# permissions for end users to edit simulation-toolkits.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: simulationtoolkit-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: olm
+    app.kubernetes.io/part-of: olm
+    app.kubernetes.io/managed-by: kustomize
+  name: simulationtoolkit-editor-role
+rules:
+- apiGroups:
+  - deploy.st4sd.res.ibm.com
+  resources:
+  - simulation-toolkits
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - deploy.st4sd.res.ibm.com
+  resources:
+  - simulation-toolkits/status
+  verbs:
+  - get
