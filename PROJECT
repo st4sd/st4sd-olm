@@ -1,4 +1,4 @@
-domain: st4sd.github.io/overview
+domain: st4sd.res.ibm.com
 layout:
 - go.kubebuilder.io/v3
 plugins:
