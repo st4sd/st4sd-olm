@@ -35,13 +35,89 @@ spec:
           spec:
             description: SimulationToolkitSpec defines the desired state of SimulationToolkit
             properties:
-              foo:
-                description: Foo is an example field of SimulationToolkit. Edit simulationtoolkit_types.go
-                  to remove/update
-                type: string
+              paused:
+                description: If true, the operator will not attempt to update/install
+                  ST4SD. Default is "false".
+                type: boolean
+              setup:
+                description: Configuration options for the deployment of the Simulation
+                  Toolkit for Scientific Discovery (ST4SD). The operator will use
+                  this information to instantiate the ST4SD helm chart (https://github.com/st4sd/st4sd-deployment).
+                properties:
+                  clusterDomain:
+                    description: "Domain to use in the Route object of the ST4SD OAuthProxy
+                      side-car container. Consider using the format: ${clusterHumanReadableUID}.${clusterDomain}.
+                      You can find the ${clusterDomain} of your OpenShift cluster
+                      via \n oc get ingress.v1.config.openshift.io cluster -o=jsonpath='{.spec.domain}'"
+                    type: string
+                  datastoreIdentifier:
+                    description: The name of the deployment. This is a short identifier
+                      with no spaces or '/' characters. ST4SD uses it to generate
+                      unique identifiers for all virtual experiments that this deployment
+                      executes.
+                    type: string
+                  pvcDatastore:
+                    description: Name of the Persistent Volume Claim (PVC) to hold
+                      the contents of the Datastore. This PVC must already exist,
+                      it must support mounting the PVC (ReadWrite) in Filesystem mode
+                      (preferably switch on ReadWriteMany access when creating this
+                      PVC). This PVC must already exist.
+                    type: string
+                  pvcInstances:
+                    description: Name of the Persistent Volume Claim (PVC) to store
+                      the virtual experiment instances. This PVC must already exist.
+                      It must also support mounting the PVC in mutliple pods (ReadWriteMany)
+                      in Filesystem mode. This PVC must already exist.
+                    type: string
+                  pvcRuntimeService:
+                    description: Name of the PVC to hold metadata about the experiment
+                      catalog of the Consumable Computing REST-API. This PVC must
+                      already exist.
+                    type: string
+                  secretDSMongoUserPass:
+                    description: (Optional) Name of Secret that contains the keys
+                      username and password to use for setting up the "admin" account
+                      of the MongoDB instance for the Datastore. The value of the
+                      username field must be "admin". The value of the password should
+                      be a valid MongoDB password. If empty, the operator will auto-generate
+                      the credentials of the MongoDB admin and store them in a new
+                      Kubernetes secret.
+                    type: string
+                type: object
             type: object
           status:
             description: SimulationToolkitStatus defines the observed state of SimulationToolkit
+            properties:
+              conditions:
+                items:
+                  properties:
+                    lastTransitionTime:
+                      description: The last time the condition transitioned from one
+                        status to another.
+                      format: date-time
+                      type: string
+                    lastUpdateTime:
+                      description: The last time this condition was updated.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A human readable message indicating details about
+                        the transition.
+                      type: string
+                    reason:
+                      description: The reason for the condition’s last transition.
+                      type: string
+                    status:
+                      description: Status of the condition, one of Paused, Updating,
+                        Failed, Successful, Unknown
+                      type: string
+                    type:
+                      description: Type of deployment condition.
+                      type: string
+                  type: object
+                type: array
+              latestVersion:
+                type: string
             type: object
         type: object
     served: true

@@ -20,22 +20,82 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+const (
+	STTUS_UNKNOWN     = "Unknown"
+	STATUS_PAUSED     = "Paused"
+	STATUS_UPDATING   = "Updating"
+	STATUS_FAILED     = "Failed"
+	STATUS_SUCCESSFUL = "Successful"
+)
+
+type SimulationToolkitSpecSetup struct {
+	// Name of the Persistent Volume Claim (PVC) to store the virtual experiment instances.
+	// This PVC must already exist. It must also support mounting the PVC in mutliple pods
+	// (ReadWriteMany) in Filesystem mode.
+	// This PVC must already exist.
+	PVCInstances string `json:"pvcInstances,omitempty"`
+
+	// Name of the Persistent Volume Claim (PVC) to hold the contents of the Datastore.
+	// This PVC must already exist, it must support mounting the PVC (ReadWrite) in Filesystem mode
+	// (preferably switch on ReadWriteMany access when creating this PVC).
+	// This PVC must already exist.
+	PVCDatastore string `json:"pvcDatastore,omitempty"`
+
+	// Name of the PVC to hold metadata about the experiment catalog of
+	// the Consumable Computing REST-API.
+	// This PVC must already exist.
+	PVCRuntimeService string `json:"pvcRuntimeService,omitempty"`
+
+	// The name of the deployment. This is a short identifier with no spaces or '/' characters.
+	// ST4SD uses it to generate unique identifiers for all virtual experiments
+	// that this deployment executes.
+	DatastoreIdentifier string `json:"datastoreIdentifier,omitempty"`
+
+	// Domain to use in the Route object of the ST4SD OAuthProxy side-car container.
+	// Consider using the format: ${clusterHumanReadableUID}.${clusterDomain}.
+	// You can find the ${clusterDomain} of your OpenShift cluster via
+	//
+	// oc get ingress.v1.config.openshift.io cluster -o=jsonpath='{.spec.domain}'
+	RouteDomain string `json:"clusterDomain,omitempty"`
+
+	// (Optional) Name of Secret that contains the keys username and password to use for setting up
+	// the "admin" account of the MongoDB instance for the Datastore. The value of the username field
+	// must be "admin". The value of the password should be a valid MongoDB password.
+	// If empty, the operator will auto-generate the credentials of the MongoDB admin and store
+	// them in a new Kubernetes secret.
+	SecretDSMongoUserPass string `json:"secretDSMongoUserPass,omitempty"`
+}
 
 // SimulationToolkitSpec defines the desired state of SimulationToolkit
 type SimulationToolkitSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Configuration options for the deployment of the Simulation Toolkit for Scientific Discovery
+	// (ST4SD). The operator will use this information to instantiate the ST4SD helm chart
+	// (https://github.com/st4sd/st4sd-deployment).
+	Setup SimulationToolkitSpecSetup `json:"setup,omitempty"`
 
-	// Foo is an example field of SimulationToolkit. Edit simulationtoolkit_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// If true, the operator will not attempt to update/install ST4SD. Default is "false".
+	Paused bool `json:"paused,omitempty"`
+}
+
+type SimulationToolkitStatusCondition struct {
+	// The last time the condition transitioned from one status to another.
+	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
+	// The last time this condition was updated.
+	LastUpdateTime metav1.Time `json:"lastUpdateTime,omitempty"`
+	// A human readable message indicating details about the transition.
+	Message string `json:"message,omitempty"`
+	// The reason for the condition’s last transition.
+	Reason string `json:"reason,omitempty"`
+	// Status of the condition, one of Paused, Updating, Failed, Successful, Unknown
+	Status string `json:"status,omitempty"`
+	// Type of deployment condition.
+	Type string `json:"type,omitempty"`
 }
 
 // SimulationToolkitStatus defines the observed state of SimulationToolkit
 type SimulationToolkitStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	LatestVersion string                             `json:"latestVersion,omitempty"`
+	Conditions    []SimulationToolkitStatusCondition `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
