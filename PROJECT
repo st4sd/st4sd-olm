@@ -1,0 +1,9 @@
+domain: st4sd.github.io/overview
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: olm
+repo: github.com/st4sd/st4sd-olm-deploy
+version: "3"
