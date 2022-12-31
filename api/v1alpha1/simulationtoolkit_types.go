@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	STTUS_UNKNOWN     = "Unknown"
+	STATUS_UNKNOWN    = ""
 	STATUS_PAUSED     = "Paused"
 	STATUS_UPDATING   = "Updating"
 	STATUS_FAILED     = "Failed"
