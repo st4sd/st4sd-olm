@@ -4,7 +4,7 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: olm
+projectName: st4sd-olm-deploy
 repo: github.com/st4sd/st4sd-olm-deploy
 resources:
 - api:

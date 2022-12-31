@@ -80,12 +80,14 @@ func (r *SimulationToolkitReconciler) UpdateStatus(
 	updateEntireObject bool,
 ) error {
 	obj.Status.Conditions = make([]deployv1alpha1.SimulationToolkitStatusCondition, len(allConditions))
+	idx := 0
 
-	for idx, key := range []string{
+	for _, key := range []string{
 		deployv1alpha1.STATUS_PAUSED, deployv1alpha1.STATUS_FAILED,
 		deployv1alpha1.STATUS_SUCCESSFUL, deployv1alpha1.STATUS_UPDATING} {
 		if c, ok := allConditions[key]; ok {
 			obj.Status.Conditions[idx] = c
+			idx++
 		}
 	}
 	var err error = nil

@@ -24,7 +24,7 @@ metadata:
     createdAt: "2022-12-31T14:08:15Z"
     operators.operatorframework.io/builder: operator-sdk-v1.26.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: olm.v0.0.1
+  name: st4sd-olm-deploy.v0.0.2
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -135,7 +135,7 @@ spec:
           app.kubernetes.io/name: deployment
           app.kubernetes.io/part-of: olm
           control-plane: controller-manager
-        name: olm-controller-manager
+        name: st4sd-olm-deploy
         spec:
           replicas: 1
           selector:
@@ -195,7 +195,8 @@ spec:
                 - --leader-elect
                 command:
                 - /manager
-                image: controller:latest
+                image: quay.io/st4sd/st4sd-olm-deploy:latest
+                imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
                     path: /healthz
@@ -486,4 +487,4 @@ spec:
   provider:
     name: IBM Research, Europe - Dublin
     url: st4sd.github.io/overview
-  version: 0.0.1
+  version: 0.0.2
