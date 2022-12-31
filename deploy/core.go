@@ -241,6 +241,7 @@ func HelmDeploySimulationToolkit(
 	}
 
 	settings := cli.New()
+	settings.SetNamespace(namespace)
 	actionConfig := new(action.Configuration)
 
 	// VV: Use vanilla log here because helm log statements do not use "keyValue" pairs. This is incompatible with "log"
@@ -252,7 +253,9 @@ func HelmDeploySimulationToolkit(
 	inNamespace := []*release.Release{}
 
 	if !dryRun {
-		x, err := actionConfig.Releases.List(func(r *release.Release) bool { return true })
+		x, err := actionConfig.Releases.List(func(r *release.Release) bool {
+			return r.Namespace == namespace
+		})
 		if err != nil {
 			return err
 		}
