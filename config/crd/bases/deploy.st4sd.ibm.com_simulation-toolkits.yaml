@@ -44,12 +44,6 @@ spec:
                   Toolkit for Scientific Discovery (ST4SD). The operator will use
                   this information to instantiate the ST4SD helm chart (https://github.com/st4sd/st4sd-deployment).
                 properties:
-                  clusterDomain:
-                    description: "Domain to use in the Route object of the ST4SD OAuthProxy
-                      side-car container. Consider using the format: ${clusterHumanReadableUID}.${clusterDomain}.
-                      You can find the ${clusterDomain} of your OpenShift cluster
-                      via \n oc get ingress.v1.config.openshift.io cluster -o=jsonpath='{.spec.domain}'"
-                    type: string
                   datastoreIdentifier:
                     description: The name of the deployment. This is a short identifier
                       with no spaces or '/' characters. ST4SD uses it to generate
@@ -73,6 +67,12 @@ spec:
                     description: Name of the PVC to hold metadata about the experiment
                       catalog of the Consumable Computing REST-API. This PVC must
                       already exist.
+                    type: string
+                  routeDomain:
+                    description: "Domain to use in the Route object of the ST4SD OAuthProxy
+                      side-car container. Consider using the format: ${clusterHumanReadableUID}.${clusterDomain}.
+                      You can find the ${clusterDomain} of your OpenShift cluster
+                      via \n oc get ingress.v1.config.openshift.io cluster -o=jsonpath='{.spec.domain}'"
                     type: string
                   secretDSMongoUserPass:
                     description: (Optional) Name of Secret that contains the keys

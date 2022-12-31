@@ -59,7 +59,7 @@ type SimulationToolkitSpecSetup struct {
 	// You can find the ${clusterDomain} of your OpenShift cluster via
 	//
 	// oc get ingress.v1.config.openshift.io cluster -o=jsonpath='{.spec.domain}'
-	RouteDomain string `json:"clusterDomain,omitempty"`
+	RouteDomain string `json:"routeDomain,omitempty"`
 
 	// (Optional) Name of Secret that contains the keys username and password to use for setting up
 	// the "admin" account of the MongoDB instance for the Datastore. The value of the username field
