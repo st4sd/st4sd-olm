@@ -28,8 +28,8 @@ BUNDLE_METADATA_OPTS ?= $(BUNDLE_CHANNELS) $(BUNDLE_DEFAULT_CHANNEL)
 # This variable is used to construct full image tags for bundle and catalog images.
 #
 # For example, running 'make bundle-build bundle-push catalog-build catalog-push' will build and push both
-# st4sd.github.io/overview/olm-bundle:$VERSION and st4sd.github.io/overview/olm-catalog:$VERSION.
-IMAGE_TAG_BASE ?= st4sd.github.io/overview/olm
+# quay.io/st4sd/st4sd-olm-deploy-bundle:$VERSION and quay.io/st4sd/st4sd-olm-deploy-catalog:$VERSION.
+IMAGE_TAG_BASE ?= quay.io/st4sd/st4sd-olm-deploy
 
 # BUNDLE_IMG defines the image:tag used for the bundle.
 # You can use it as an arg. (E.g make bundle-build BUNDLE_IMG=<some-registry>/<project-name-bundle>:<tag>)

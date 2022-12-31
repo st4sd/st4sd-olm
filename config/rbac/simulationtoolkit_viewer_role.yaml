@@ -12,7 +12,7 @@ metadata:
   name: simulationtoolkit-viewer-role
 rules:
 - apiGroups:
-  - deploy.st4sd.res.ibm.com
+  - deploy.st4sd.ibm.com
   resources:
   - simulation-toolkits
   verbs:
@@ -20,7 +20,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - deploy.st4sd.res.ibm.com
+  - deploy.st4sd.ibm.com
   resources:
   - simulation-toolkits/status
   verbs:

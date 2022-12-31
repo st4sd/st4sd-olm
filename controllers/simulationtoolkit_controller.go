@@ -21,8 +21,12 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"time"
 
-	"k8s.io/apimachinery/pkg/api/errors"
+	"helm.sh/helm/v3/pkg/chart/loader"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -30,27 +34,69 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	deployv1alpha1 "github.com/st4sd/st4sd-olm-deploy/api/v1alpha1"
+	"github.com/st4sd/st4sd-olm-deploy/deploy"
 )
 
-var (
-	annotationLastConfigurationKey = "st4sd.res.ibm.com/last-configuration"
+const (
+	annotationLastConfigurationKey = "st4sd.ibm.com/last-configuration"
+	STALE_THRESHOLD_SECONDS        = 5 * 60
 )
 
 // SimulationToolkitReconciler reconciles a SimulationToolkit object
 type SimulationToolkitReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
+	// Version of the Simulation Toolkit (from the helm-chart bundled alongside the operator)
+	ToolkitVersion string
+	// Version of the helm-chart that deploys the toolkit (from the helm-chart
+	// bundled alongside the operator)
+	HelmChartVersion string
+	HelmChartPath    string
 }
 
-//+kubebuilder:rbac:groups=deploy.st4sd.res.ibm.com,resources=simulation-toolkits,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=deploy.st4sd.res.ibm.com,resources=simulation-toolkits/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=deploy.st4sd.res.ibm.com,resources=simulation-toolkits/finalizers,verbs=update
+//+kubebuilder:rbac:groups=deploy.st4sd.ibm.com,resources=simulation-toolkits,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=deploy.st4sd.ibm.com,resources=simulation-toolkits/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=deploy.st4sd.ibm.com,resources=simulation-toolkits/finalizers,verbs=update
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SimulationToolkitReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	chart, err := loader.Load(r.HelmChartPath)
+
+	if err != nil {
+		return err
+	}
+
+	r.HelmChartVersion = chart.Metadata.Version
+	r.ToolkitVersion = chart.AppVersion()
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&deployv1alpha1.SimulationToolkit{}).
 		Complete(r)
+}
+
+func (r *SimulationToolkitReconciler) UpdateStatus(
+	ctx context.Context, obj *deployv1alpha1.SimulationToolkit,
+	allConditions map[string]deployv1alpha1.SimulationToolkitStatusCondition,
+	updateEntireObject bool,
+) error {
+	obj.Status.Conditions = make([]deployv1alpha1.SimulationToolkitStatusCondition, len(allConditions))
+
+	for idx, key := range []string{
+		deployv1alpha1.STATUS_PAUSED, deployv1alpha1.STATUS_FAILED,
+		deployv1alpha1.STATUS_SUCCESSFUL, deployv1alpha1.STATUS_UPDATING} {
+		if c, ok := allConditions[key]; ok {
+			obj.Status.Conditions[idx] = c
+		}
+	}
+	var err error = nil
+
+	if updateEntireObject {
+		err = r.Update(ctx, obj)
+	} else {
+		err = r.Status().Update(ctx, obj)
+	}
+
+	return err
 }
 
 //+kubebuilder:rbac:groups=core.st4sd.ibm.com,resources=st4sdruntimes,verbs=get;list;watch;create;update;patch;delete
@@ -62,12 +108,12 @@ func (r *SimulationToolkitReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
 
-	obj_cr := &deployv1alpha1.SimulationToolkit{}
-	err := r.Get(ctx, req.NamespacedName, obj_cr)
+	obj := &deployv1alpha1.SimulationToolkit{}
+	err := r.Get(ctx, req.NamespacedName, obj)
 
 	if err != nil {
-		if errors.IsNotFound(err) {
-			logger.Info("ST4SDRuntime resource not found. Ignoring since object must have been deleted.")
+		if k8serrors.IsNotFound(err) {
+			logger.Info("resource not found - ignoring since object must have been deleted.")
 
 			return r.DoNotRequeue(nil)
 		} else {
@@ -78,20 +124,23 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	// VV: Do not bother with objects that are marked for Deletion - we *could* consider that this means
 	// a user wishes to un-deploy but let the system admin deal with this scenario.
 	// They just need to delete the helm releases.
-	if obj_cr.GetDeletionTimestamp() != nil {
+	if obj.GetDeletionTimestamp() != nil {
 		r.DoNotRequeue(nil)
 	}
 
 	var lastCondition *deployv1alpha1.SimulationToolkitStatusCondition = nil
-	allConditions := map[string]*deployv1alpha1.SimulationToolkitStatusCondition{}
+	allConditions := map[string]deployv1alpha1.SimulationToolkitStatusCondition{}
 
-	for i := range obj_cr.Status.Conditions {
-		c := obj_cr.Status.Conditions[i]
-		allConditions[c.Status] = &obj_cr.Status.Conditions[i]
+	addBackToQueue := false
+	updateEntireObject := false
+
+	for i := range obj.Status.Conditions {
+		c := obj.Status.Conditions[i]
+		allConditions[c.Status] = obj.Status.Conditions[i]
 
 		if lastCondition == nil ||
 			c.LastTransitionTime.UnixMilli() > lastCondition.LastTransitionTime.UnixMilli() {
-			lastCondition = &obj_cr.Status.Conditions[i]
+			lastCondition = &obj.Status.Conditions[i]
 		}
 	}
 
@@ -101,105 +150,126 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 	}
 
-	// VV: If state is unset, object is either Paused Or about to start Updating
-	// if the deployment is Paused but its state is something else then mark the State as Paused
-	// and never go back to it
-	if lastCondition.Status == deployv1alpha1.STATUS_UNKNOWN {
-		if obj_cr.Spec.Paused {
-			obj_cr.Status.State = st4sd.STATE_PAUSED
-		} else {
-			obj_cr.Status.State = st4sd.STATE_UPDATING
-		}
-
-		err = r.Status().Update(ctx, obj_cr)
-		if err != nil {
-			logger.Info("Could not update status", "status.state", obj_cr.Status.State, "err", err)
-			return r.Requeue(err)
-		}
-	} else if obj_cr.Status.State != st4sd.STATE_PAUSED && obj_cr.Spec.Paused {
-		obj_cr.Status.State = st4sd.STATE_PAUSED
-
-		err = r.Status().Update(ctx, obj_cr)
-		if err != nil {
-			logger.Info("Could not update status", "status.state", obj_cr.Status.State, "err", err)
-			return r.Requeue(err)
-		}
+	if obj.ObjectMeta.Annotations == nil {
+		obj.ObjectMeta.Annotations = make(map[string]string)
 	}
 
-	if obj_cr.ObjectMeta.Annotations == nil {
-		obj_cr.ObjectMeta.Annotations = make(map[string]string)
-	}
-	lastConfiguration := obj_cr.ObjectMeta.Annotations[annotationLastConfigurationKey]
+	if obj.Spec.Paused {
+		paused := allConditions[deployv1alpha1.STATUS_PAUSED]
 
-	// VV: Here we look at the annotation to make sure that the Configuration
-	// has not changed since the last time we updated the deployment.
-	// This will trigger an update if the CRD changes after the runtime
-	// has already been deployed once
-	currentHash := obj_cr.Spec.Configuration.HashBase64()
-	if lastConfiguration != currentHash {
-		if obj_cr.Status.State != st4sd.STATE_UPDATING {
-			logger.Info("Last known configuration mismatch - setting state to "+st4sd.STATE_UPDATING,
-				"recordedState", obj_cr.Status.State, "lastConfiguration", lastConfiguration,
-				"currentHash", currentHash)
-			obj_cr.ObjectMeta.Annotations[annotationLastConfigurationKey] = currentHash
+		paused.Status = deployv1alpha1.STATUS_PAUSED
+		paused.LastUpdateTime = v1.NewTime(time.Now())
+		paused.LastTransitionTime = paused.LastUpdateTime
+		if paused.Message == "" {
+			paused.Message = "Pausing deployment because setup.paused=true"
+		}
 
-			err = r.Update(ctx, obj_cr)
-			if err != nil {
-				logger.Info("Could not update annotations", "err", err)
-				return r.Requeue(err)
+		allConditions[deployv1alpha1.STATUS_PAUSED] = paused
+	} else {
+		// VV: Here we know that we hope to install or update ST4SD
+
+		transitionToUpdating := func(message string) {
+			updating := allConditions[deployv1alpha1.STATUS_UPDATING]
+
+			updating.Status = deployv1alpha1.STATUS_UPDATING
+			updating.LastUpdateTime = v1.NewTime(time.Now())
+			updating.LastTransitionTime = updating.LastUpdateTime
+			updating.Message = message
+			updating.Reason = "WillStartUpdatingSoon"
+
+			updating.HelmChartVersion = r.HelmChartVersion
+			updating.ToolkitVersion = r.ToolkitVersion
+
+			allConditions[deployv1alpha1.STATUS_UPDATING] = updating
+		}
+
+		/* VV: State machine details:
+		Unknown => Updating
+		Updating => if update successful Successful, else Failed
+		Failed => if (transitioned to failed less than 5 minutes ago)
+			OR (configuration has changed since last time we deployed/updated):
+
+		If configuration has changed since last time we deployed/updated:
+		  Successful => Updating
+		Else:
+			stay in the same
+		*/
+		now := v1.NewTime(time.Now())
+		secondsDt := now.Unix() - lastCondition.LastTransitionTime.Unix()
+		hashLast := obj.ObjectMeta.Annotations[annotationLastConfigurationKey]
+		hashCurrent := obj.Spec.Setup.HashBase64()
+		configurationChanged := hashCurrent != hashLast
+		configurationOld := now.Unix()-lastCondition.LastTransitionTime.Unix() > STALE_THRESHOLD_SECONDS
+		deploymentStale := (r.HelmChartVersion != lastCondition.HelmChartVersion) ||
+			(r.ToolkitVersion != lastCondition.ToolkitVersion)
+
+		switch lastCondition.Status {
+		case deployv1alpha1.STATUS_UNKNOWN:
+			transitionToUpdating("Starting deployment because setup.paused=false")
+		case deployv1alpha1.STATUS_SUCCESSFUL:
+			if configurationChanged {
+				transitionToUpdating("Updating Successful deployment to apply new Setup configuration")
+			} else if deploymentStale {
+				transitionToUpdating("Updating Successful deployment to apply new Helm chart")
 			}
-
-			obj_cr.Status.State = st4sd.STATE_UPDATING
-			err = r.Status().Update(ctx, obj_cr)
-			if err != nil {
-				logger.Info("Could not update status", "err", err)
-				return r.Requeue(err)
+		case deployv1alpha1.STATUS_FAILED:
+			if configurationChanged {
+				transitionToUpdating("Retrying Failed deployment to apply new Setup configuration")
+			} else if configurationOld {
+				why := fmt.Sprintf("Retrying Failed deployment after waiting for %d seconds", secondsDt)
+				transitionToUpdating(why)
+			} else if deploymentStale {
+				transitionToUpdating("Retrying Failed deployment to apply new Helm chart")
 			}
-		}
-	}
+		case deployv1alpha1.STATUS_UPDATING:
+			obj.ObjectMeta.Annotations[annotationLastConfigurationKey] = hashCurrent
+			updateEntireObject = true
+			err := deploy.HelmDeploySimulationToolkit(r.HelmChartPath, &obj.Spec.Setup,
+				req.NamespacedName.Namespace, false)
+			if err == nil {
+				status := deployv1alpha1.STATUS_SUCCESSFUL
+				successful := allConditions[status]
 
-	// VV: State machine
-	// Paused -> *Paused (do not requeue)
-	// Failed -> *Failed (do not requeue)
-	// Updating -> Successful      - if deployment is Successful
-	// Updating -> Failed          - if deployment Failed
-	// Updating -> Testing (TBD)   - if spec.TestAfterDeployment is True
-	// Testing -> Successful (TBD) - if testing is Successful
-	// Testing -> Failed     (TBD) - if testing Failed
+				successful.Status = status
+				successful.LastUpdateTime = v1.NewTime(time.Now())
+				successful.LastTransitionTime = successful.LastUpdateTime
+				successful.Message = "ST4SD deployed, enjoy!"
+				successful.Reason = "Success"
 
-	switch obj_cr.Status.State {
+				successful.HelmChartVersion = r.HelmChartVersion
+				successful.ToolkitVersion = r.ToolkitVersion
 
-	case st4sd.STATE_SUCCESSFUL:
-	case st4sd.STATE_FAILED:
-	case st4sd.STATE_PAUSED:
-		logger.Info(obj_cr.Name + " is already " + obj_cr.Status.State + ", nothing more to do")
-		return r.DoNotRequeue(nil)
-
-	case st4sd.STATE_UPDATING:
-		configuration := obj_cr.Spec.Configuration
-		namespacedObjectsOnly := (r.DeployObjects == "namespaced-only")
-		logger.Info("Handling ST4SDRuntimeConfiguration", "configuration", configuration,
-			"namespacedObjectsOnly", namespacedObjectsOnly)
-
-		err := st4sd.HelmInstallUpgrade("/chart", &configuration, namespacedObjectsOnly,
-			req.NamespacedName.Namespace, "st4sd-runtime-managed", false)
-		if err != nil {
-			logger.Info("Unable to install/upgrade helm", "err", err)
-			obj_cr.Status.State = st4sd.STATE_FAILED
-		} else {
-			logger.Info("Success")
-			if obj_cr.Spec.TestAfterDeployment {
-				obj_cr.Status.State = st4sd.STATE_TESTING
+				allConditions[status] = successful
 			} else {
-				obj_cr.Status.State = st4sd.STATE_SUCCESSFUL
+				status := deployv1alpha1.STATUS_FAILED
+				failed := allConditions[status]
+
+				failed.Status = status
+				failed.LastUpdateTime = v1.NewTime(time.Now())
+				failed.LastTransitionTime = failed.LastUpdateTime
+				failed.Message = fmt.Sprint("Failed to deploy ST4SD.", err)
+				failed.Reason = "HelmDeploymentFailed"
+
+				failed.HelmChartVersion = r.HelmChartVersion
+				failed.ToolkitVersion = r.ToolkitVersion
+
+				allConditions[status] = failed
+				addBackToQueue = true
 			}
 		}
-
-		err = r.Status().Update(ctx, obj_cr)
-		return r.Requeue(nil)
 	}
 
-	return r.DoNotRequeue(nil)
+	err = r.UpdateStatus(ctx, obj, allConditions, updateEntireObject)
+	if err != nil {
+		logger.Error(err, "Could not update status")
+		return r.Requeue(err)
+	}
+
+	if addBackToQueue {
+		return r.Requeue(nil)
+	} else {
+		return r.DoNotRequeue(nil)
+	}
 }
 
 func (r *SimulationToolkitReconciler) DoNotRequeue(with_error error) (reconcile.Result, error) {

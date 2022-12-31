@@ -17,15 +17,18 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"encoding/base64"
+	"encoding/json"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
 	STATUS_UNKNOWN    = ""
 	STATUS_PAUSED     = "Paused"
-	STATUS_UPDATING   = "Updating"
 	STATUS_FAILED     = "Failed"
 	STATUS_SUCCESSFUL = "Successful"
+	STATUS_UPDATING   = "Updating"
 )
 
 type SimulationToolkitSpecSetup struct {
@@ -88,8 +91,10 @@ type SimulationToolkitStatusCondition struct {
 	Reason string `json:"reason,omitempty"`
 	// Status of the condition, one of Paused, Updating, Failed, Successful, Unknown
 	Status string `json:"status,omitempty"`
-	// Type of deployment condition.
-	Type string `json:"type,omitempty"`
+	// Version of the Simulation Toolkit
+	ToolkitVersion string `json:"toolkitVersion,omitempty"`
+	// Version of the helm-chart that deploys the toolkit
+	HelmChartVersion string `json:"helmChartVersion,omitempty"`
 }
 
 // SimulationToolkitStatus defines the observed state of SimulationToolkit
@@ -122,4 +127,10 @@ type SimulationToolkitList struct {
 
 func init() {
 	SchemeBuilder.Register(&SimulationToolkit{}, &SimulationToolkitList{})
+}
+
+func (c *SimulationToolkitSpecSetup) HashBase64() string {
+	contents, _ := json.Marshal(*c)
+	encoded := base64.StdEncoding.EncodeToString(contents)
+	return encoded
 }

@@ -1,4 +1,4 @@
-apiVersion: deploy.st4sd.res.ibm.com/v1alpha1
+apiVersion: deploy.st4sd.ibm.com/v1alpha1
 kind: SimulationToolkit
 metadata:
   labels:

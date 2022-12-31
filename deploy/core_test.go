@@ -44,7 +44,7 @@ func TestDryRun(t *testing.T) {
 
 	pathChart := filepath.Join("..", "st4sd-deployment", "helm-chart")
 
-	err := HelmInstallUpgrade(pathChart, &x, "vv-playground", "st4sd-runtime", true)
+	err := HelmDeploySimulationToolkit(pathChart, &x, "vv-playground", true)
 	if err != nil {
 		t.Fatal("Unable to install/upgrade helm due to", err)
 	}

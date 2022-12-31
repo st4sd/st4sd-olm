@@ -1,13 +1,12 @@
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: simulation-toolkits.deploy.st4sd.res.ibm.com
+  name: simulation-toolkits.deploy.st4sd.ibm.com
 spec:
-  group: deploy.st4sd.res.ibm.com
+  group: deploy.st4sd.ibm.com
   names:
     kind: SimulationToolkit
     listKind: SimulationToolkitList
@@ -91,6 +90,9 @@ spec:
               conditions:
                 items:
                   properties:
+                    helmChartVersion:
+                      description: Version of the helm-chart that deploys the toolkit
+                      type: string
                     lastTransitionTime:
                       description: The last time the condition transitioned from one
                         status to another.
@@ -111,8 +113,8 @@ spec:
                       description: Status of the condition, one of Paused, Updating,
                         Failed, Successful, Unknown
                       type: string
-                    type:
-                      description: Type of deployment condition.
+                    toolkitVersion:
+                      description: Version of the Simulation Toolkit
                       type: string
                   type: object
                 type: array
@@ -124,3 +126,9 @@ spec:
     storage: true
     subresources:
       status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: null
+  storedVersions: null

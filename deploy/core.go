@@ -27,8 +27,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	vanilla_log "log"
-
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 
 	"gopkg.in/yaml.v3"
@@ -36,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/kube"
@@ -43,6 +42,14 @@ import (
 
 	"github.com/pkg/errors"
 	st4sdv1alpha1 "github.com/st4sd/st4sd-olm-deploy/api/v1alpha1"
+
+	vanilla_log "log"
+)
+
+const (
+	RELEASE_CLUSTER_SCOPED       = "st4sd-cluster-scoped"
+	RELEASE_NAMESPACED_UNMANAGED = "st4sd-namespaced-unmanaged"
+	RELEASE_NAMESPACED_MANAGED   = "st4sd-namespaced-managed"
 )
 
 func TriggerImportImage(
@@ -144,70 +151,49 @@ func UpdateCRD(path, namespace string, kubeClient kube.Interface) error {
 	return nil
 }
 
-func HelmInstallUpgrade(
-	helmChartPath string,
+func HelmDeployPart(
+	namespace, releaseName, helmChartPath string, dryRun bool,
 	configuration *st4sdv1alpha1.SimulationToolkitSpecSetup,
-	namespace string,
-	releaseName string,
-	dryRun bool,
+	chart *chart.Chart, actionConfig *action.Configuration,
+	inNamespace []*release.Release,
 ) error {
-	logger := log.Log.WithName("helm")
-	logger.Info("Preparing to install/update reployment",
-		"helmChartPath", helmChartPath, "dryRun", dryRun, "configuration", configuration)
-	values, err := ConfigurationToHelmValues(configuration)
+	logger := log.Log.WithName("Deploy")
+	values, err := ConfigurationToHelmValues(configuration, releaseName)
 
 	if err != nil {
 		return err
 	}
-	settings := cli.New()
-	actionConfig := new(action.Configuration)
 
-	// VV: Use vanilla log here because helm log statements do not use "keyValue" pairs. This is incompatible with "log"
-	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, "", vanilla_log.Printf); err != nil {
-		logger.Info("Could not initialize helm/action.Configuration")
-		return err
-	}
+	releaseExists := false
 
-	chart, err := loader.Load(helmChartPath)
-	if err != nil {
-		return errors.Wrap(err, "Unable to load helm chart")
-	}
-
-	crd_path := filepath.Join(helmChartPath, "crd-workflow.yaml")
-
-	// VV: Because of the way that helm treats CRDs (see comment in configurationToHelmValues())
-	// we'll first create/Update the CRD here
-	if !dryRun {
-		err = UpdateCRD(crd_path, namespace, actionConfig.KubeClient)
-		if err != nil {
-			return err
+	for _, rel := range inNamespace {
+		if rel.Name == releaseName && rel.Namespace == namespace {
+			releaseExists = true
+			break
 		}
 	}
-
-	results := []*release.Release{}
-
-	if !dryRun {
-		// VV: If Helm release already exists in current namespace, update it. Otherwise, create it.
-		results, err = actionConfig.Releases.List(func(rel *release.Release) bool {
-			return rel.Name == releaseName && rel.Namespace == namespace
-		})
-	}
-
-	releaseExists := (len(results) > 0)
 
 	var release *release.Release
 	logger.Info("Discovering exiting helm release in namespace",
 		"releaseName", releaseName,
 		"namespace", namespace,
 		"releaseExists", releaseExists,
-		"err", err,
-		"numResults", len(results),
-	)
+		"err", err)
+
+	if !dryRun && releaseName == RELEASE_CLUSTER_SCOPED {
+		// VV: Because of the way that helm treats CRDs (see comment in configurationToHelmValues())
+		// we'll first create/Update the CRD here
+		crd_path := filepath.Join(helmChartPath, "crd-workflow.yaml")
+
+		err = UpdateCRD(crd_path, namespace, actionConfig.KubeClient)
+		if err != nil {
+			return err
+		}
+	}
 
 	if releaseExists {
 		client := action.NewUpgrade(actionConfig)
 		client.Namespace = namespace
-		client.DryRun = dryRun
 		client.DryRun = dryRun
 		client.Devel = true
 		client.ReuseValues = true
@@ -232,11 +218,60 @@ func HelmInstallUpgrade(
 	// This step configures OpenShift to "import" the images and populate the ImageStreamTags of the
 	// ImageStream objects we created via helm
 	// logger.Info("The rendered manifest is", "manifest", release.Manifest)
-	if !dryRun {
+	if !dryRun && releaseName == RELEASE_NAMESPACED_MANAGED {
 		err = TriggerDeploymentConfigs(release, actionConfig.KubeClient, namespace)
 	}
 
 	return err
+}
+
+func HelmDeploySimulationToolkit(
+	helmChartPath string,
+	configuration *st4sdv1alpha1.SimulationToolkitSpecSetup,
+	namespace string,
+	dryRun bool,
+) error {
+	logger := log.Log.WithName("helm")
+	logger.Info("Preparing to install/update reployment",
+		"helmChartPath", helmChartPath, "dryRun", dryRun, "configuration", configuration)
+
+	chart, err := loader.Load(helmChartPath)
+	if err != nil {
+		return errors.Wrap(err, "Unable to load helm chart")
+	}
+
+	settings := cli.New()
+	actionConfig := new(action.Configuration)
+
+	// VV: Use vanilla log here because helm log statements do not use "keyValue" pairs. This is incompatible with "log"
+	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, "", vanilla_log.Printf); err != nil {
+		logger.Info("Could not initialize helm/action.Configuration")
+		return err
+	}
+
+	inNamespace := []*release.Release{}
+
+	if !dryRun {
+		x, err := actionConfig.Releases.List(func(r *release.Release) bool { return true })
+		if err != nil {
+			return err
+		}
+		inNamespace = x
+	}
+
+	releases := [3]string{RELEASE_CLUSTER_SCOPED, RELEASE_NAMESPACED_UNMANAGED, RELEASE_NAMESPACED_MANAGED}
+
+	for _, releaseName := range releases {
+		err = HelmDeployPart(
+			namespace, releaseName, helmChartPath,
+			dryRun, configuration, chart, actionConfig, inNamespace)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func TriggerDeploymentConfigs(release *release.Release, kubeClient kube.Interface, namespace string) error {
@@ -300,7 +335,9 @@ func TriggerDeploymentConfigs(release *release.Release, kubeClient kube.Interfac
 }
 
 func ConfigurationToHelmValues(
-	configuration *st4sdv1alpha1.SimulationToolkitSpecSetup) (map[string]interface{}, error) {
+	configuration *st4sdv1alpha1.SimulationToolkitSpecSetup,
+	releaseName string,
+) (map[string]interface{}, error) {
 	fields := strings.Split(configuration.RouteDomain, ".")
 
 	if len(fields) < 2 {
@@ -324,6 +361,55 @@ func ConfigurationToHelmValues(
 		"clusterRouteDomain":         clusterRouteDomain,
 		"datastoreLabelGateway":      datastoreIdentifier,
 		"installGithubSecretOAuth":   false,
+	}
+
+	switchOn := []string{}
+	switchOff := []string{}
+
+	switch releaseName {
+	case RELEASE_CLUSTER_SCOPED:
+		switchOn = append(switchOn, "installRBACClusterScoped")
+		switchOff = append(switchOff,
+			"installDatastoreSecretMongoDB", "installRuntimeServiceConfigMap",
+			"installRegistryBackendConfigMap", "installRegistryUINginxConfigMap",
+			"installWorkflowOperator", "installDatastore", "installRuntimeService",
+			"installRegistryBackend", "installRegistryUI", "installAuthentication",
+			"installRBACNamespaced", "installDeployer",
+			"installGithubSecretOAuth")
+	case RELEASE_NAMESPACED_UNMANAGED:
+		switchOn = append(switchOn,
+			"installDatastoreSecretMongoDB", "installRuntimeServiceConfigMap",
+			"installRegistryBackendConfigMap", "installRegistryUINginxConfigMap",
+		)
+		switchOff = append(switchOff,
+			"installRBACClusterScoped",
+			"installWorkflowOperator", "installDatastore", "installRuntimeService",
+			"installRegistryBackend", "installRegistryUI", "installAuthentication",
+			"installRBACNamespaced", "installDeployer",
+			"installGithubSecretOAuth",
+		)
+	case RELEASE_NAMESPACED_MANAGED:
+		switchOn = append(switchOn,
+			"installWorkflowOperator", "installDatastore", "installRuntimeService",
+			"installRegistryBackend", "installRegistryUI", "installAuthentication",
+			"installRBACNamespaced", "installDeployer",
+		)
+		switchOff = append(switchOff,
+			"installRBACClusterScoped",
+			"installDatastoreSecretMongoDB", "installRuntimeServiceConfigMap",
+			"installRegistryBackendConfigMap", "installRegistryUINginxConfigMap", "installDeployer",
+			"installGithubSecretOAuth",
+		)
+	default:
+		return values, fmt.Errorf("unknown release %s", releaseName)
+	}
+
+	for _, k := range switchOn {
+		values[k] = true
+	}
+
+	for _, k := range switchOff {
+		values[k] = false
 	}
 
 	return values, nil

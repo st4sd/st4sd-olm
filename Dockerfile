@@ -16,6 +16,7 @@ COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
 
+
 # Build
 # the GOARCH has not a default value to allow the binary be built according to the host where the command
 # was called. For example, if we call make docker-build in a local env which has the Apple Silicon M1 SO
@@ -28,6 +29,22 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o ma
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/manager .
+COPY st4sd-deployment/helm-chart/ helm-chart/
+
+RUN echo 'You can find the licenses of GPL packages in this container under \n\
+/usr/share/doc/${PACKAGE_NAME}/copyright \n\
+\n\
+If you would like the source to the GPL packages in this image then \n\
+send a request to this address, specifying the package you want and \n\
+the name and hash of this image: \n\
+\n\
+IBM Research Ireland,\n\
+IBM Technology Campus\n\
+Damastown Industrial Park\n\
+Mulhuddart Co. Dublin D15 HN66\n\
+Ireland\n' >/gpl-licenses
+
 USER 65532:65532
+
 
 ENTRYPOINT ["/manager"]

@@ -6,7 +6,33 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - deploy.st4sd.res.ibm.com
+  - core.st4sd.ibm.com
+  resources:
+  - st4sdruntimes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - core.st4sd.ibm.com
+  resources:
+  - st4sdruntimes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - core.st4sd.ibm.com
+  resources:
+  - st4sdruntimes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - deploy.st4sd.ibm.com
   resources:
   - simulation-toolkits
   verbs:
@@ -18,13 +44,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - deploy.st4sd.res.ibm.com
+  - deploy.st4sd.ibm.com
   resources:
   - simulation-toolkits/finalizers
   verbs:
   - update
 - apiGroups:
-  - deploy.st4sd.res.ibm.com
+  - deploy.st4sd.ibm.com
   resources:
   - simulation-toolkits/status
   verbs:

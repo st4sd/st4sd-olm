@@ -13,7 +13,7 @@ spec:
     - description: SimulationToolkit is the Schema for the simulation-toolkits API
       displayName: Simulation Toolkit
       kind: SimulationToolkit
-      name: simulation-toolkits.deploy.st4sd.res.ibm.com
+      name: simulation-toolkits.deploy.st4sd.ibm.com
       version: v1alpha1
   description: The Simulation Toolkit for Scientific Discovery (ST4SD) simplifies
     the development, execution and dissemination of virtual experiments by providing
