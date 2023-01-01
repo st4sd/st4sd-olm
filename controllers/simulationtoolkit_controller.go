@@ -79,6 +79,16 @@ func (r *SimulationToolkitReconciler) UpdateStatus(
 	allConditions map[string]deployv1alpha1.SimulationToolkitStatusCondition,
 	updateEntireObject bool,
 ) error {
+	var err error = nil
+
+	if updateEntireObject {
+		err = r.Update(ctx, obj)
+	}
+
+	if err != nil {
+		return err
+	}
+
 	obj.Status.Conditions = make([]deployv1alpha1.SimulationToolkitStatusCondition, len(allConditions))
 	idx := 0
 
@@ -91,14 +101,10 @@ func (r *SimulationToolkitReconciler) UpdateStatus(
 		}
 	}
 
-	err := r.Status().Update(ctx, obj)
+	err = r.Status().Update(ctx, obj)
 
 	if err != nil {
 		return err
-	}
-
-	if updateEntireObject {
-		err = r.Update(ctx, obj)
 	}
 
 	return err
@@ -149,8 +155,10 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 	}
 
-	if obj.ObjectMeta.Annotations == nil {
-		obj.ObjectMeta.Annotations = make(map[string]string)
+	hashCurrent := obj.Spec.Setup.Hash()
+	if obj.GetAnnotations() == nil {
+		annotations := map[string]string{annotationLastConfigurationKey: hashCurrent}
+		obj.SetAnnotations(annotations)
 	}
 
 	if obj.Spec.Paused {
@@ -196,7 +204,6 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		now := v1.NewTime(time.Now())
 		secondsDt := now.Unix() - lastCondition.LastTransitionTime.Unix()
 		hashLast := obj.ObjectMeta.Annotations[annotationLastConfigurationKey]
-		hashCurrent := obj.Spec.Setup.Hash()
 		configurationChanged := hashCurrent != hashLast
 		configurationOld := now.Unix()-lastCondition.LastTransitionTime.Unix() > STALE_THRESHOLD_SECONDS
 		deploymentStale := (r.HelmChartVersion != lastCondition.HelmChartVersion) ||
