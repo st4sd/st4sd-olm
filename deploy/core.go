@@ -33,15 +33,16 @@ import (
 	"k8s.io/cli-runtime/pkg/resource"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
+	"github.com/go-logr/logr"
+	"github.com/pkg/errors"
+	st4sdv1alpha1 "github.com/st4sd/st4sd-olm-deploy/api/v1alpha1"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
+	"helm.sh/helm/v3/pkg/chartutil"
 	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/kube"
 	"helm.sh/helm/v3/pkg/release"
-
-	"github.com/pkg/errors"
-	st4sdv1alpha1 "github.com/st4sd/st4sd-olm-deploy/api/v1alpha1"
 
 	vanilla_log "log"
 )
@@ -154,6 +155,17 @@ func UpdateCRD(path, namespace string, kubeClient kube.Interface) error {
 	return nil
 }
 
+type RecordDeployedChart struct {
+	Manifest string
+}
+
+func (r *RecordDeployedChart) Run(
+	renderedManifests *bytes.Buffer,
+) (modifiedManifests *bytes.Buffer, err error) {
+	r.Manifest = renderedManifests.String()
+	return renderedManifests, nil
+}
+
 func HelmDeployPart(
 	namespace, releaseName, helmChartPath string, dryRun bool,
 	configuration *st4sdv1alpha1.SimulationToolkitSpecSetup,
@@ -167,43 +179,40 @@ func HelmDeployPart(
 		return err
 	}
 
-	releaseExists := false
+	// logger.Info("Generated values for "+releaseName, "values", values)
 
-	for _, rel := range inNamespace {
+	var release *release.Release = nil
+
+	for i, rel := range inNamespace {
 		if rel.Name == releaseName && rel.Namespace == namespace {
-			releaseExists = true
+			release = inNamespace[i]
 			break
 		}
 	}
 
-	var release *release.Release
 	logger.Info("Discovering exiting helm release in namespace",
 		"releaseName", releaseName,
 		"namespace", namespace,
-		"releaseExists", releaseExists,
+		"releaseExists", release != nil,
 		"err", err)
 
-	if !dryRun && releaseName == RELEASE_CLUSTER_SCOPED {
-		// VV: Because of the way that helm treats CRDs (see comment in configurationToHelmValues())
-		// we'll first create/Update the CRD here
-		crd_path := filepath.Join(helmChartPath, "crd-workflow.yaml")
-
-		err = UpdateCRD(crd_path, namespace, actionConfig.KubeClient)
-		logger.Info("Unable to update CRDs", "error", err)
-		if err != nil {
-			return err
-		}
-	}
-
-	if releaseExists {
+	if release != nil {
 		logger.Info("Updating release", "releaseName", releaseName)
 		client := action.NewUpgrade(actionConfig)
+
+		// recorded := RecordDeployedChart{}
+		// client.PostRenderer = &recorded
 		client.Namespace = namespace
 		client.DryRun = dryRun
 		client.Devel = true
+		client.ResetValues = false
 		client.ReuseValues = true
 		client.MaxHistory = 2
+
 		release, err = client.Run(releaseName, chart, values)
+
+		// VV: Uncomment to print the Manifest that Helm attempted to deploy (works even if chart is borked)
+		// logger.Info("Rendered " + recorded.Manifest)
 	} else {
 		logger.Info("Installing release", "releaseName", releaseName)
 		client := action.NewInstall(actionConfig)
@@ -219,6 +228,17 @@ func HelmDeployPart(
 		return err
 	}
 
+	if !dryRun && releaseName == RELEASE_CLUSTER_SCOPED {
+		crd_path := filepath.Join(helmChartPath, "crd-workflow.yaml")
+
+		err = UpdateCRD(crd_path, namespace, actionConfig.KubeClient)
+
+		if err != nil {
+			logger.Info("Unable to update CRDs", "error", err)
+			return err
+		}
+	}
+
 	// VV: Now we need to manually do "oc import-image" i.e. create ImageStreamImport objects.
 	// This step configures OpenShift to "import" the images and populate the ImageStreamTags of the
 	// ImageStream objects we created via helm
@@ -228,6 +248,19 @@ func HelmDeployPart(
 	}
 
 	return err
+}
+
+func renderValuesForChart(
+	releaseName string, namespace string, release *release.Release, chart *chart.Chart,
+	values map[string]interface{}, actionConfig *action.Configuration, logger logr.Logger) {
+	options := chartutil.ReleaseOptions{
+		Name:      releaseName,
+		Namespace: namespace,
+		Revision:  release.Version + 1,
+		IsUpgrade: true,
+	}
+	newVals, _ := chartutil.ToRenderValues(chart, values, options, actionConfig.Capabilities)
+	logger.Info("New values " + fmt.Sprintf("%+v", newVals))
 }
 
 func HelmDeploySimulationToolkit(
@@ -311,14 +344,14 @@ func TriggerDeploymentConfigs(release *release.Release, kubeClient kube.Interfac
 			continue
 		}
 
-		metadata := object["metadata"].(map[interface{}]interface{})
+		metadata := object["metadata"].(map[string]interface{})
 		imagestreamName := metadata["name"].(string)
-		spec := object["spec"].(map[interface{}]interface{})
+		spec := object["spec"].(map[string]interface{})
 		tags := spec["tags"].([]interface{})
 
 		for _, i := range tags {
-			t := i.(map[interface{}]interface{})
-			_from := t["from"].(map[interface{}]interface{})
+			t := i.(map[string]interface{})
+			_from := t["from"].(map[string]interface{})
 			imageUrl := _from["name"].(string)
 			tag := t["name"].(string)
 
@@ -364,11 +397,20 @@ func ConfigurationToHelmValues(
 		"pvcForWorkflowInstances":      configuration.PVCInstances,
 		"pvcForDatastoreMongoDB":       configuration.PVCDatastore,
 		"pvcForRuntimeServiceMetadata": configuration.PVCRuntimeService,
+		"clusterRouteDomain":           clusterRouteDomain,
+		"datastoreLabelGateway":        datastoreIdentifier,
 
-		"datastoreMongoDBSecretName": configuration.SecretDSMongoUserPass,
-		"clusterRouteDomain":         clusterRouteDomain,
-		"datastoreLabelGateway":      datastoreIdentifier,
-		"installGithubSecretOAuth":   false,
+		"installGithubSecretOAuth":                    false,
+		"installImagePullSecretWorkflowStack":         false,
+		"installImagePullSecretContribApplications":   false,
+		"installImagePullSecretCommunityApplications": false,
+		"useImagePullSecretWorkflowStack":             false,
+		"useImagePullSecretContribApplications":       false,
+		"useImagePullSecretCommunityApplications":     false,
+	}
+
+	if configuration.SecretDSMongoUserPass != "" {
+		values["datastoreMongoDBSecretName"] = configuration.SecretDSMongoUserPass
 	}
 
 	switchOn := []string{}

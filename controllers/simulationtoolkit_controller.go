@@ -167,14 +167,14 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	} else {
 		// VV: Here we know that we hope to install or update ST4SD
 
-		transitionToUpdating := func(message string) {
+		transitionToUpdating := func(message, reason string) {
 			updating := allConditions[deployv1alpha1.STATUS_UPDATING]
 
 			updating.Status = deployv1alpha1.STATUS_UPDATING
 			updating.LastUpdateTime = v1.NewTime(time.Now())
 			updating.LastTransitionTime = updating.LastUpdateTime
 			updating.Message = message
-			updating.Reason = "WillStartUpdatingSoon"
+			updating.Reason = reason
 
 			updating.HelmChartVersion = r.HelmChartVersion
 			updating.ToolkitVersion = r.ToolkitVersion
@@ -208,24 +208,24 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			"configurationOld", configurationOld, "deploymentStale", deploymentStale,
 			"hashLast", hashLast, "hashCurrent", hashCurrent,
 		)
-
+		soon := "WillStartUpdatingSoon"
 		switch lastCondition.Status {
 		case deployv1alpha1.STATUS_UNKNOWN:
-			transitionToUpdating("Starting deployment because setup.paused=false")
+			transitionToUpdating("Starting deployment because setup.paused=false", soon)
 		case deployv1alpha1.STATUS_SUCCESSFUL:
 			if configurationChanged {
-				transitionToUpdating("Updating Successful deployment to apply new Setup configuration")
+				transitionToUpdating("Updating Successful deployment to apply new Setup configuration", soon)
 			} else if deploymentStale {
-				transitionToUpdating("Updating Successful deployment to apply new Helm chart")
+				transitionToUpdating("Updating Successful deployment to apply new Helm chart", soon)
 			}
 		case deployv1alpha1.STATUS_FAILED:
 			if configurationChanged {
-				transitionToUpdating("Retrying Failed deployment to apply new Setup configuration")
+				transitionToUpdating("Retrying Failed deployment to apply new Setup configuration", soon)
 			} else if configurationOld {
 				why := fmt.Sprintf("Retrying Failed deployment after waiting for %d seconds", secondsDt)
-				transitionToUpdating(why)
+				transitionToUpdating(why, soon)
 			} else if deploymentStale {
-				transitionToUpdating("Retrying Failed deployment to apply new Helm chart")
+				transitionToUpdating("Retrying Failed deployment to apply new Helm chart", soon)
 			} else {
 				// VV: We don't want to update the deployment right now, we may want to update it later
 				addBackToQueue = true
@@ -233,6 +233,14 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		case deployv1alpha1.STATUS_UPDATING:
 			obj.ObjectMeta.Annotations[annotationLastConfigurationKey] = hashCurrent
 			updateEntireObject = true
+
+			transitionToUpdating("Deploying ST4SD now", "Updating")
+			err = r.UpdateStatus(ctx, obj, allConditions, updateEntireObject)
+			if err != nil {
+				logger.Error(err, "Could not update status")
+				return r.Requeue(err)
+			}
+
 			err := deploy.HelmDeploySimulationToolkit(r.HelmChartPath, &obj.Spec.Setup,
 				req.NamespacedName.Namespace, false)
 
