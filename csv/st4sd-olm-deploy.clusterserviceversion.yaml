@@ -48,9 +48,7 @@ spec:
       clusterPermissions:
       - rules:
         - apiGroups:
-          - core.st4sd.ibm.com
-          resources:
-          - st4sdruntimes
+          - security.openshift.io
           verbs:
           - create
           - delete
@@ -59,20 +57,33 @@ spec:
           - patch
           - update
           - watch
-        - apiGroups:
-          - core.st4sd.ibm.com
           resources:
-          - st4sdruntimes/finalizers
-          verbs:
-          - update
+          - securitycontextconstraints
         - apiGroups:
-          - core.st4sd.ibm.com
-          resources:
-          - st4sdruntimes/status
+          - authorization.openshift.io
+          - rbac.authorization.k8s.io
           verbs:
+          - create
+          - delete
           - get
+          - list
           - patch
           - update
+          - watch
+          resources:
+          - clusterrolebindings
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
         - apiGroups:
           - deploy.st4sd.ibm.com
           resources:
@@ -125,11 +136,11 @@ spec:
             - authorization.k8s.io
           resources:
             - subjectaccessreviews
-        serviceAccountName: olm-controller-manager
+        serviceAccountName: st4sd-olm-deploy-manager
       deployments:
       - label:
           app.kubernetes.io/component: manager
-          app.kubernetes.io/created-by: olm
+          app.kubernetes.io/created-by: st4sd-olm-deploy
           app.kubernetes.io/instance: controller-manager
           app.kubernetes.io/managed-by: kustomize
           app.kubernetes.io/name: deployment
@@ -167,29 +178,6 @@ spec:
                         - linux
               containers:
               - args:
-                - --secure-listen-address=0.0.0.0:8443
-                - --upstream=http://127.0.0.1:8080/
-                - --logtostderr=true
-                - --v=0
-                image: gcr.io/kubebuilder/kube-rbac-proxy:v0.13.0
-                name: kube-rbac-proxy
-                ports:
-                - containerPort: 8443
-                  name: https
-                  protocol: TCP
-                resources:
-                  limits:
-                    cpu: 500m
-                    memory: 128Mi
-                  requests:
-                    cpu: 5m
-                    memory: 64Mi
-                securityContext:
-                  allowPrivilegeEscalation: false
-                  capabilities:
-                    drop:
-                    - ALL
-              - args:
                 - --health-probe-bind-address=:8081
                 - --metrics-bind-address=127.0.0.1:8080
                 - --leader-elect
@@ -212,8 +200,8 @@ spec:
                   periodSeconds: 10
                 resources:
                   limits:
-                    cpu: 500m
-                    memory: 128Mi
+                    cpu: 1000m
+                    memory: 512Mi
                   requests:
                     cpu: 10m
                     memory: 64Mi
@@ -224,8 +212,12 @@ spec:
                     - ALL
               securityContext:
                 runAsNonRoot: true
-              serviceAccountName: olm-controller-manager
+              serviceAccountName: st4sd-olm-deploy-manager
               terminationGracePeriodSeconds: 10
+      #### VV: "permissions" contents must go under "clusterPermissions"
+      # We need the operator to be able to deploy ST4SD *in any namespace*.
+      # Therefore, the operator needs to be able to deploy all the below objects
+      # in *any* namespace.
       permissions:
       - rules:
         #### role-workflow-user.yaml
@@ -441,7 +433,7 @@ spec:
           - update
           - patch
           - delete
-        # default
+        #### default
         - apiGroups:
           - coordination.k8s.io
           resources:
@@ -461,7 +453,7 @@ spec:
           verbs:
           - create
           - patch
-        serviceAccountName: olm-controller-manager
+        serviceAccountName: st4sd-olm-deploy-manager
     strategy: deployment
   installModes:
   - supported: false
@@ -478,8 +470,8 @@ spec:
   - high-performance
   - surrogates
   links:
-  - name: Olm
-    url: https://olm.domain
+  - name: st4sd-olm-deploy
+    url: https://st4sd.github.io/overview
   maintainers:
   - email: vassilis.vassiliadis@ibm.com
     name: Vassilis Vassiliadis

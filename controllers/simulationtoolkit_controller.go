@@ -90,12 +90,15 @@ func (r *SimulationToolkitReconciler) UpdateStatus(
 			idx++
 		}
 	}
-	var err error = nil
+
+	err := r.Status().Update(ctx, obj)
+
+	if err != nil {
+		return err
+	}
 
 	if updateEntireObject {
 		err = r.Update(ctx, obj)
-	} else {
-		err = r.Status().Update(ctx, obj)
 	}
 
 	return err
@@ -130,25 +133,19 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		r.DoNotRequeue(nil)
 	}
 
-	var lastCondition *deployv1alpha1.SimulationToolkitStatusCondition = nil
+	lastCondition := deployv1alpha1.SimulationToolkitStatusCondition{}
 	allConditions := map[string]deployv1alpha1.SimulationToolkitStatusCondition{}
 
 	addBackToQueue := false
-	updateEntireObject := false
+	updateEntireObject := true
 
 	for i := range obj.Status.Conditions {
 		c := obj.Status.Conditions[i]
-		allConditions[c.Status] = obj.Status.Conditions[i]
+		allConditions[c.Status] = c
 
-		if lastCondition == nil ||
-			c.LastTransitionTime.UnixMilli() > lastCondition.LastTransitionTime.UnixMilli() {
-			lastCondition = &obj.Status.Conditions[i]
-		}
-	}
-
-	if lastCondition == nil {
-		lastCondition = &deployv1alpha1.SimulationToolkitStatusCondition{
-			Status: deployv1alpha1.STATUS_UNKNOWN,
+		if lastCondition.Status == deployv1alpha1.STATUS_UNKNOWN ||
+			(c.Status != deployv1alpha1.STATUS_UNKNOWN && c.LastTransitionTime.UnixMilli() > lastCondition.LastTransitionTime.UnixMilli()) {
+			lastCondition = c
 		}
 	}
 
@@ -199,11 +196,18 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		now := v1.NewTime(time.Now())
 		secondsDt := now.Unix() - lastCondition.LastTransitionTime.Unix()
 		hashLast := obj.ObjectMeta.Annotations[annotationLastConfigurationKey]
-		hashCurrent := obj.Spec.Setup.HashBase64()
+		hashCurrent := obj.Spec.Setup.Hash()
 		configurationChanged := hashCurrent != hashLast
 		configurationOld := now.Unix()-lastCondition.LastTransitionTime.Unix() > STALE_THRESHOLD_SECONDS
 		deploymentStale := (r.HelmChartVersion != lastCondition.HelmChartVersion) ||
 			(r.ToolkitVersion != lastCondition.ToolkitVersion)
+
+		logger.Info(
+			"Handling new object", "name", obj.Name, "namespace", obj.Namespace, "lastCondition",
+			lastCondition, "configurationChanged", configurationChanged,
+			"configurationOld", configurationOld, "deploymentStale", deploymentStale,
+			"hashLast", hashLast, "hashCurrent", hashCurrent,
+		)
 
 		switch lastCondition.Status {
 		case deployv1alpha1.STATUS_UNKNOWN:
@@ -222,12 +226,16 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				transitionToUpdating(why)
 			} else if deploymentStale {
 				transitionToUpdating("Retrying Failed deployment to apply new Helm chart")
+			} else {
+				// VV: We don't want to update the deployment right now, we may want to update it later
+				addBackToQueue = true
 			}
 		case deployv1alpha1.STATUS_UPDATING:
 			obj.ObjectMeta.Annotations[annotationLastConfigurationKey] = hashCurrent
 			updateEntireObject = true
 			err := deploy.HelmDeploySimulationToolkit(r.HelmChartPath, &obj.Spec.Setup,
 				req.NamespacedName.Namespace, false)
+
 			if err == nil {
 				status := deployv1alpha1.STATUS_SUCCESSFUL
 				successful := allConditions[status]
@@ -256,6 +264,8 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				failed.ToolkitVersion = r.ToolkitVersion
 
 				allConditions[status] = failed
+
+				logger.Info("Failed to deploy ST4SD", "error", err)
 				addBackToQueue = true
 			}
 		}

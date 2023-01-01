@@ -112,9 +112,9 @@ func UpdateCRD(path, namespace string, kubeClient kube.Interface) error {
 		if info.Kind != "CustomResourceDefinition" {
 			return fmt.Errorf("file %s contains non-CustomResourceDefinition object (%s)", path, info.Kind)
 		}
-	}
 
-	logger.Info("Installing/Updating CRDs")
+		logger.Info("Installing/Updating CRD " + crd.ObjectName())
+	}
 
 	err = resources.Visit(func(info *resource.Info, err error) error {
 		if err != nil {
@@ -127,6 +127,7 @@ func UpdateCRD(path, namespace string, kubeClient kube.Interface) error {
 			if !apierrors.IsNotFound(err) {
 				return errors.Wrap(err, "could not get information about the resource")
 			}
+			logger.Info("Will create CRD " + info.Name)
 			if _, err := helper.Create(info.Namespace, true, info.Object); err != nil {
 				return errors.Wrap(err, "failed to create resource")
 			} else {
@@ -134,6 +135,8 @@ func UpdateCRD(path, namespace string, kubeClient kube.Interface) error {
 			}
 			return nil
 		}
+
+		logger.Info("Will update CRD " + info.Name)
 
 		if _, err = helper.Replace(info.Namespace, info.Name, true, info.Object); err != nil {
 			return errors.Wrap(err, "failed to replace object")
@@ -186,12 +189,14 @@ func HelmDeployPart(
 		crd_path := filepath.Join(helmChartPath, "crd-workflow.yaml")
 
 		err = UpdateCRD(crd_path, namespace, actionConfig.KubeClient)
+		logger.Info("Unable to update CRDs", "error", err)
 		if err != nil {
 			return err
 		}
 	}
 
 	if releaseExists {
+		logger.Info("Updating release", "releaseName", releaseName)
 		client := action.NewUpgrade(actionConfig)
 		client.Namespace = namespace
 		client.DryRun = dryRun
@@ -200,13 +205,13 @@ func HelmDeployPart(
 		client.MaxHistory = 2
 		release, err = client.Run(releaseName, chart, values)
 	} else {
+		logger.Info("Installing release", "releaseName", releaseName)
 		client := action.NewInstall(actionConfig)
 		client.Namespace = namespace
 		client.ReleaseName = releaseName
 		client.DryRun = dryRun
 		client.Devel = true
 		client.ClientOnly = dryRun
-		client.IsUpgrade = true
 		release, err = client.Run(chart, values)
 	}
 
@@ -270,7 +275,7 @@ func HelmDeploySimulationToolkit(
 			dryRun, configuration, chart, actionConfig, inNamespace)
 
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "unable to deploy release %s", releaseName)
 		}
 	}
 

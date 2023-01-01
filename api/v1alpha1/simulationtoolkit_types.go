@@ -17,8 +17,9 @@ limitations under the License.
 package v1alpha1
 
 import (
-	"encoding/base64"
+	"crypto/md5"
 	"encoding/json"
+	"fmt"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -129,8 +130,7 @@ func init() {
 	SchemeBuilder.Register(&SimulationToolkit{}, &SimulationToolkitList{})
 }
 
-func (c *SimulationToolkitSpecSetup) HashBase64() string {
+func (c *SimulationToolkitSpecSetup) Hash() string {
 	contents, _ := json.Marshal(*c)
-	encoded := base64.StdEncoding.EncodeToString(contents)
-	return encoded
+	return fmt.Sprintf("%x", md5.Sum(contents))
 }
