@@ -37,6 +37,8 @@ echo "Will include following bundles in catalog: ${all_bundles}"
 set -xe
 
 # VV: Put together the new bundle. It upgrades ${OLD_VERSION} to ${VERSION}
+mkdir -p bundle/manifests
+
 cp config/manifests/st4sd-olm-deploy.clusterserviceversion.yaml \
    bundle/manifests/
 
