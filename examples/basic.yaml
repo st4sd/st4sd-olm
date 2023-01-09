@@ -1,0 +1,12 @@
+kind: SimulationToolkit
+apiVersion: deploy.st4sd.ibm.com/v1alpha1
+metadata:
+  name: vassilis
+  namespace: vv-playground
+spec:
+  setup:
+    routeDomain: vv.ve-5446-9ca4d14d48413d18ce61b80811ba4308-0000.us-south.containers.appdomain.cloud
+    datastoreIdentifier: vv
+    pvcDatastore: datastore-mongodb
+    pvcInstances: workflow-instances-pvc
+    pvcRuntimeService: runtime-service

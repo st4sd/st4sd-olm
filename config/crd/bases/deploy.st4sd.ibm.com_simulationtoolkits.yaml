@@ -5,20 +5,38 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.10.0
   creationTimestamp: null
-  name: simulation-toolkits.deploy.st4sd.ibm.com
+  name: simulationtoolkits.deploy.st4sd.ibm.com
 spec:
   group: deploy.st4sd.ibm.com
   names:
     kind: SimulationToolkit
     listKind: SimulationToolkitList
-    plural: simulation-toolkits
+    plural: simulationtoolkits
+    shortNames:
+    - st4sd
     singular: simulationtoolkit
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - description: Age of the workflow instance
+      jsonPath: .metadata.creationTimestamp
+      name: age
+      type: string
+    - description: Latest status of deployment
+      jsonPath: .status.phase
+      name: status
+      type: string
+    - description: VersionID consists of the a / separated array of strings. The strings
+        are (in this order)st4sd-odlm-deploy (this operator) version, Helm Chart version,
+        ST4SD version.
+      jsonPath: .status.versionID
+      name: versionID
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: SimulationToolkit is the Schema for the simulation-toolkits API
+        description: SimulationToolkit contains setup instructions to deploy the Simulation
+          Toolkit for Scientific Discovery (ST4SD).
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -91,9 +109,6 @@ spec:
               conditions:
                 items:
                   properties:
-                    helmChartVersion:
-                      description: Version of the helm-chart that deploys the toolkit
-                      type: string
                     lastTransitionTime:
                       description: The last time the condition transitioned from one
                         status to another.
@@ -114,12 +129,21 @@ spec:
                       description: Status of the condition, one of Paused, Updating,
                         Failed, Successful, Unknown
                       type: string
-                    toolkitVersion:
-                      description: Version of the Simulation Toolkit
+                    versionID:
+                      description: VersionID consists of the a / separated array of
+                        strings. The strings are (in this order) st4sd-odlm-deploy
+                        (this operator) version, Helm Chart version, ST4SD version.
                       type: string
                   type: object
                 type: array
-              latestVersion:
+              phase:
+                description: Status of the condition, one of Paused, Updating, Failed,
+                  Successful, Unknown or empty (i.e. Unknown)
+                type: string
+              versionID:
+                description: VersionID consists of the a / separated array of strings.
+                  The strings are (in this order) st4sd-odlm-deploy (this operator)
+                  version, Helm Chart version, ST4SD version.
                 type: string
             type: object
         type: object

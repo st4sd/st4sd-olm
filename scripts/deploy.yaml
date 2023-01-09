@@ -1,0 +1,25 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: st4sd-runtime-catalog
+  namespace: openshift-marketplace
+spec:
+  sourceType: grpc
+  image: quay.io/ibmvassiliad/st4sd-olm-deploy-catalog:latest
+  displayName: ST4SD Runtime Catalog
+  publisher: ST4SD
+  updateStrategy:
+    registryPoll:
+      interval: 15m
+
+---
+
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: st4sd
+  namespace: openshift-marketplace
+spec:
+  selector:
+    matchLabels:
+      st4sd.ibm.com/runtime-deploy: "true"

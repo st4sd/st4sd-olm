@@ -30,6 +30,7 @@ const (
 	STATUS_FAILED     = "Failed"
 	STATUS_SUCCESSFUL = "Successful"
 	STATUS_UPDATING   = "Updating"
+	OPERATOR_VERSION  = "0.0.13"
 )
 
 type SimulationToolkitSpecSetup struct {
@@ -92,23 +93,29 @@ type SimulationToolkitStatusCondition struct {
 	Reason string `json:"reason,omitempty"`
 	// Status of the condition, one of Paused, Updating, Failed, Successful, Unknown
 	Status string `json:"status,omitempty"`
-	// Version of the Simulation Toolkit
-	ToolkitVersion string `json:"toolkitVersion,omitempty"`
-	// Version of the helm-chart that deploys the toolkit
-	HelmChartVersion string `json:"helmChartVersion,omitempty"`
+	// VersionID consists of the a / separated array of strings. The strings are (in this order)
+	// st4sd-odlm-deploy (this operator) version, Helm Chart version, ST4SD version.
+	VersionID string `json:"versionID,omitempty"`
 }
 
 // SimulationToolkitStatus defines the observed state of SimulationToolkit
 type SimulationToolkitStatus struct {
-	LatestVersion string                             `json:"latestVersion,omitempty"`
-	Conditions    []SimulationToolkitStatusCondition `json:"conditions,omitempty"`
+	// VersionID consists of the a / separated array of strings. The strings are (in this order)
+	// st4sd-olm-deploy (this operator) version, Helm Chart version, ST4SD version.
+	VersionID string `json:"versionID,omitempty"`
+	// Status of the condition, one of Paused, Updating, Failed, Successful, Unknown or empty (i.e. Unknown)
+	Phase      string                             `json:"phase,omitempty"`
+	Conditions []SimulationToolkitStatusCondition `json:"conditions,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:resource:path=simulation-toolkits
-
-// SimulationToolkit is the Schema for the simulation-toolkits API
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:resource:path=simulationtoolkits,shortName=st4sd
+// +kubebuilder:printcolumn:name="age",type="string",JSONPath=".metadata.creationTimestamp",description="Age of the workflow instance"
+// +kubebuilder:printcolumn:name="status",type="string",JSONPath=".status.phase",description="Latest status of deployment"
+// +kubebuilder:printcolumn:name="versionID",type="string",JSONPath=".status.versionID",description="VersionID consists of the a / separated array of strings. The strings are (in this order)st4sd-odlm-deploy (this operator) version, Helm Chart version, ST4SD version."
+// SimulationToolkit contains setup instructions to deploy the Simulation Toolkit for Scientific Discovery
+// (ST4SD).
 type SimulationToolkit struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

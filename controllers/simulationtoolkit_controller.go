@@ -22,12 +22,14 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"helm.sh/helm/v3/pkg/chart/loader"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -54,9 +56,9 @@ type SimulationToolkitReconciler struct {
 	HelmChartPath    string
 }
 
-//+kubebuilder:rbac:groups=deploy.st4sd.ibm.com,resources=simulation-toolkits,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=deploy.st4sd.ibm.com,resources=simulation-toolkits/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=deploy.st4sd.ibm.com,resources=simulation-toolkits/finalizers,verbs=update
+//+kubebuilder:rbac:groups=deploy.st4sd.ibm.com,resources=simulationtoolkits,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=deploy.st4sd.ibm.com,resources=simulationtoolkits/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=deploy.st4sd.ibm.com,resources=simulationtoolkits/finalizers,verbs=update
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *SimulationToolkitReconciler) SetupWithManager(mgr ctrl.Manager) error {
@@ -81,6 +83,9 @@ func (r *SimulationToolkitReconciler) UpdateStatus(
 ) error {
 	var err error = nil
 
+	phase := obj.Status.Phase
+	versionID := obj.Status.VersionID
+
 	if updateEntireObject {
 		err = r.Update(ctx, obj)
 	}
@@ -101,13 +106,23 @@ func (r *SimulationToolkitReconciler) UpdateStatus(
 		}
 	}
 
+	obj.Status.Phase = phase
+	obj.Status.VersionID = versionID
+
 	err = r.Status().Update(ctx, obj)
 
 	if err != nil {
 		return err
 	}
 
+	// VV: The object is now different, get the most up-to-date version
+	err = r.Get(ctx, types.NamespacedName{Namespace: obj.ObjectMeta.Namespace, Name: obj.ObjectMeta.Name}, obj)
+
 	return err
+}
+
+func (r *SimulationToolkitReconciler) ExpectedVersion() string {
+	return strings.Join([]string{deployv1alpha1.OPERATOR_VERSION, r.HelmChartVersion, r.ToolkitVersion}, "/")
 }
 
 //+kubebuilder:rbac:groups=core.st4sd.ibm.com,resources=st4sdruntimes,verbs=get;list;watch;create;update;patch;delete
@@ -171,6 +186,11 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			paused.Message = "Pausing deployment because setup.paused=true"
 		}
 
+		if paused.VersionID == "" {
+			paused.VersionID = r.ExpectedVersion()
+		}
+
+		obj.Status.Phase = deployv1alpha1.STATUS_PAUSED
 		allConditions[deployv1alpha1.STATUS_PAUSED] = paused
 	} else {
 		// VV: Here we know that we hope to install or update ST4SD
@@ -184,9 +204,8 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			updating.Message = message
 			updating.Reason = reason
 
-			updating.HelmChartVersion = r.HelmChartVersion
-			updating.ToolkitVersion = r.ToolkitVersion
-
+			updating.VersionID = r.ExpectedVersion()
+			obj.Status.Phase = deployv1alpha1.STATUS_UPDATING
 			allConditions[deployv1alpha1.STATUS_UPDATING] = updating
 		}
 
@@ -206,8 +225,8 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		hashLast := obj.ObjectMeta.Annotations[annotationLastConfigurationKey]
 		configurationChanged := hashCurrent != hashLast
 		configurationOld := now.Unix()-lastCondition.LastTransitionTime.Unix() > STALE_THRESHOLD_SECONDS
-		deploymentStale := (r.HelmChartVersion != lastCondition.HelmChartVersion) ||
-			(r.ToolkitVersion != lastCondition.ToolkitVersion)
+		deploymentStale := r.ExpectedVersion() != lastCondition.VersionID
+		obj.Status.VersionID = r.ExpectedVersion()
 
 		logger.Info(
 			"Handling new object", "name", obj.Name, "namespace", obj.Namespace, "lastCondition",
@@ -261,9 +280,8 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				successful.Message = "ST4SD deployed, enjoy!"
 				successful.Reason = "Success"
 
-				successful.HelmChartVersion = r.HelmChartVersion
-				successful.ToolkitVersion = r.ToolkitVersion
-
+				successful.VersionID = r.ExpectedVersion()
+				obj.Status.Phase = deployv1alpha1.STATUS_SUCCESSFUL
 				allConditions[status] = successful
 			} else {
 				status := deployv1alpha1.STATUS_FAILED
@@ -275,8 +293,9 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				failed.Message = fmt.Sprint("Failed to deploy ST4SD.", err)
 				failed.Reason = "HelmDeploymentFailed"
 
-				failed.HelmChartVersion = r.HelmChartVersion
-				failed.ToolkitVersion = r.ToolkitVersion
+				obj.Status.Phase = deployv1alpha1.STATUS_FAILED
+
+				failed.VersionID = r.ExpectedVersion()
 
 				allConditions[status] = failed
 

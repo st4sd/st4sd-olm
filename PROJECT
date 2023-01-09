@@ -15,6 +15,6 @@ resources:
   group: deploy
   kind: SimulationToolkit
   path: github.com/st4sd/st4sd-olm-deploy/api/v1alpha1
-  plural: simulation-toolkits
+  plural: simulationtoolkits
   version: v1alpha1
 version: "3"
