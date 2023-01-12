@@ -35,8 +35,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	deployv1alpha1 "github.com/st4sd/st4sd-olm-deploy/api/v1alpha1"
-	"github.com/st4sd/st4sd-olm-deploy/deploy"
+	"github.com/pkg/errors"
+	deployv1alpha1 "github.com/st4sd/st4sd-olm/api/v1alpha1"
+	"github.com/st4sd/st4sd-olm/deploy"
 )
 
 const (
@@ -267,8 +268,38 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				return r.Requeue(err)
 			}
 
-			err := deploy.HelmDeploySimulationToolkit(r.HelmChartPath, &obj.Spec.Setup,
-				req.NamespacedName.Namespace, false)
+			// VV: Right before we deploy this, check if `routeDomain` is unset. If so, try to discover it.
+			// If that fails, then we simply cannot deploy ST4SD here unless the user tells us which domain to use
+			var err error = nil
+
+			if obj.Spec.Setup.RouteDomain == "" {
+				if obj.Spec.Setup.DatastoreIdentifier == "" {
+					err = fmt.Errorf("unable to auto-generate routeDomain because datastoreIdentifier is unset")
+				} else {
+					ingress, inner_err := deploy.DiscoverClusterIngress()
+					if inner_err != nil {
+						err = errors.Wrap(err, "unable to auto-generate routeDomain")
+					} else {
+						routeDomain := fmt.Sprintf("%s-%s.%s", obj.Spec.Setup.DatastoreIdentifier,
+							req.NamespacedName.Namespace, ingress)
+						obj.Spec.Setup.RouteDomain = routeDomain
+					}
+				}
+			} else if obj.Spec.Setup.DatastoreIdentifier == "" {
+				fields := strings.Split(obj.Spec.Setup.RouteDomain, ".")
+
+				if len(fields) < 2 {
+					err = fmt.Errorf("Expected RouteDomain to be in the form " +
+						"of <datastoreIdentifier>.<domain>, but was " + obj.Spec.Setup.RouteDomain)
+				} else {
+					obj.Spec.Setup.DatastoreIdentifier = fields[0]
+				}
+			}
+
+			if err == nil {
+				err = deploy.HelmDeploySimulationToolkit(r.HelmChartPath, &obj.Spec.Setup,
+					req.NamespacedName.Namespace, false)
+			}
 
 			if err == nil {
 				status := deployv1alpha1.STATUS_SUCCESSFUL

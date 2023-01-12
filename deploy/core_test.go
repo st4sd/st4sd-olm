@@ -49,3 +49,15 @@ func TestDryRun(t *testing.T) {
 		t.Fatal("Unable to install/upgrade helm due to", err)
 	}
 }
+
+/* VV: We need certain cluster permissions (and also a cluster) to run this test
+func TestExtractClusterDomain(t *testing.T) {
+	domain, err := DiscoverDefaultRoute()
+
+	if err != nil {
+		t.Fatalf("Failure %s", err)
+	}
+
+	fmt.Printf("Domain is %s\n", domain)
+}
+*/

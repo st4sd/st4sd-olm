@@ -46,6 +46,9 @@ import (
 	"helm.sh/helm/v3/pkg/kube"
 	"helm.sh/helm/v3/pkg/release"
 
+	configv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
+	ctrl "sigs.k8s.io/controller-runtime"
+
 	vanilla_log "log"
 )
 
@@ -54,6 +57,27 @@ const (
 	RELEASE_NAMESPACED_UNMANAGED = "st4sd-namespaced-unmanaged"
 	RELEASE_NAMESPACED_MANAGED   = "st4sd-namespaced-managed"
 )
+
+func DiscoverClusterIngress() (string, error) {
+	config, err := ctrl.GetConfig()
+
+	if err != nil {
+		return "", errors.Wrap(err, "unable to discover default cluster domain because I could not build a k8s config")
+	}
+	configV1Client, err := configv1.NewForConfig(config)
+
+	if err != nil {
+		return "", errors.Wrap(err, "unable to discover default cluster domain because I could not build a configV1Client")
+	}
+
+	ingress, err := configV1Client.Ingresses().Get(context.TODO(), "cluster", v1.GetOptions{})
+
+	if err != nil {
+		return "", errors.Wrap(err, "unable to discover default cluster domain because I could not get the cluster Ingress")
+	}
+
+	return ingress.Spec.Domain, nil
+}
 
 func TriggerImportImage(
 	kubeClient kube.Interface,
