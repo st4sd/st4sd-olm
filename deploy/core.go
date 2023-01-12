@@ -21,6 +21,7 @@ package deploy
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -28,6 +29,7 @@ import (
 	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"gopkg.in/yaml.v3"
 	"k8s.io/cli-runtime/pkg/resource"
@@ -35,7 +37,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
-	st4sdv1alpha1 "github.com/st4sd/st4sd-olm-deploy/api/v1alpha1"
+	st4sdv1alpha1 "github.com/st4sd/st4sd-olm/api/v1alpha1"
 	"helm.sh/helm/v3/pkg/action"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/chart/loader"
@@ -383,7 +385,7 @@ func ConfigurationToHelmValues(
 
 	if len(fields) < 2 {
 		err := fmt.Errorf("Expected RouteDomain to be in the form " +
-			"of <CDBLabelGateway>.<domain>, but was " + configuration.RouteDomain)
+			"of <datastoreIdentifier>.<domain>, but was " + configuration.RouteDomain)
 		return nil, err
 	}
 

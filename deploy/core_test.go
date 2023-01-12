@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	st4sdv1alpha1 "github.com/st4sd/st4sd-olm-deploy/api/v1alpha1"
+	st4sdv1alpha1 "github.com/st4sd/st4sd-olm/api/v1alpha1"
 )
 
 func TestDryRun(t *testing.T) {

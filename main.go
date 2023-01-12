@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -32,8 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	deployv1alpha1 "github.com/st4sd/st4sd-olm-deploy/api/v1alpha1"
-	"github.com/st4sd/st4sd-olm-deploy/controllers"
+	deployv1alpha1 "github.com/st4sd/st4sd-olm/api/v1alpha1"
+	"github.com/st4sd/st4sd-olm/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -54,6 +55,8 @@ func main() {
 	var enableLeaderElection bool
 	var probeAddr string
 	helmChartPath := "helm-chart"
+
+	fmt.Println("Operator version is", deployv1alpha1.OPERATOR_VERSION)
 
 	flag.StringVar(&helmChartPath, "helm-chart", helmChartPath, "The path to the ST4SD helm chart")
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
@@ -86,18 +89,20 @@ func main() {
 		// the manager stops, so would be fine to enable this option. However,
 		// if you are doing or is intended to do any operation such as perform cleanups
 		// after the manager stops then its usage might be unsafe.
-		// LeaderElectionReleaseOnCancel: true,
+		LeaderElectionReleaseOnCancel: true,
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
-	if err = (&controllers.SimulationToolkitReconciler{
+	st4sd_olm := controllers.SimulationToolkitReconciler{
 		Client:        mgr.GetClient(),
 		Scheme:        mgr.GetScheme(),
 		HelmChartPath: helmChartPath,
-	}).SetupWithManager(mgr); err != nil {
+	}
+
+	if err = st4sd_olm.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SimulationToolkit")
 		os.Exit(1)
 	}
@@ -112,7 +117,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
+	setupLog.Info("starting manager",
+		"operatorVersion", deployv1alpha1.OPERATOR_VERSION, "helmChartVersion", st4sd_olm.HelmChartVersion,
+		"toolkitVersion", st4sd_olm.ToolkitVersion)
+
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)

@@ -7,7 +7,7 @@ source ${dirScripts}/constants.sh
 
 set -xe
 
-export IMAGE_TAG_BASE="quay.io/ibmvassiliad/st4sd-olm-deploy"
+export IMAGE_TAG_BASE=${IMAGE_TAG_BASE:-"quay.io/st4sd/st4sd-olm"}
 
 make docker-build 
 make docker-push

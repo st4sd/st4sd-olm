@@ -2,7 +2,6 @@ apiVersion: operators.coreos.com/v1alpha1
 kind: ClusterServiceVersion
 metadata:
   annotations:
-    olm.skipRange: '<%%VERSION%%'
     alm-examples: |-
       [
         {
@@ -14,7 +13,7 @@ metadata:
               "app.kubernetes.io/instance": "example-st4sd-deploy",
               "app.kubernetes.io/managed-by": "kustomize",
               "app.kubernetes.io/name": "simulationtoolkit",
-              "app.kubernetes.io/part-of": "st4sd-olm-deploy"
+              "app.kubernetes.io/part-of": "st4sd-olm"
             },
             "name": "example-st4sd-deploy"
           },
@@ -34,10 +33,10 @@ metadata:
     operatorframework.io/suggested-namespace: openshift-operators
     operators.operatorframework.io/builder: operator-sdk-v1.26.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: st4sd-olm-deploy.v%%VERSION%%
+  name: st4sd-olm.v0.0.2
   namespace: placeholder
 spec:
-  replaces: st4sd-olm-deploy.v%%OLD_VERSION%%
+  replaces: st4sd-olm.v0.0.1
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
@@ -380,17 +379,17 @@ spec:
           verbs:
           - create
           - patch
-        serviceAccountName: st4sd-olm-deploy-manager
+        serviceAccountName: st4sd-olm-manager
       deployments:
       - label:
           app.kubernetes.io/component: manager
-          app.kubernetes.io/created-by: st4sd-olm-deploy
+          app.kubernetes.io/created-by: st4sd-olm
           app.kubernetes.io/instance: controller-manager
           app.kubernetes.io/managed-by: kustomize
           app.kubernetes.io/name: deployment
           app.kubernetes.io/part-of: olm
           control-plane: controller-manager
-        name: st4sd-olm-deploy
+        name: st4sd-olm
         spec:
           replicas: 1
           selector:
@@ -424,7 +423,7 @@ spec:
                 - --leader-elect
                 command:
                 - /manager
-                image: "quay.io/st4sd/st4sd-olm-deploy:v%%VERSION%%"
+                image: "quay.io/st4sd/st4sd-olm:v0.0.2"
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -453,7 +452,7 @@ spec:
                     - ALL
               securityContext:
                 runAsNonRoot: true
-              serviceAccountName: st4sd-olm-deploy-manager
+              serviceAccountName: st4sd-olm-manager
               terminationGracePeriodSeconds: 10
     strategy: deployment
   installModes:
@@ -471,7 +470,7 @@ spec:
   - high-performance
   - surrogates
   links:
-  - name: st4sd-olm-deploy
+  - name: st4sd-olm
     url: https://st4sd.github.io/overview
   maintainers:
   - email: vassilis.vassiliadis@ibm.com
@@ -480,4 +479,4 @@ spec:
   provider:
     name: IBM Research, Europe - Dublin
     url: st4sd.github.io/overview
-  version: "%%VERSION%%"
+  version: "0.0.2"

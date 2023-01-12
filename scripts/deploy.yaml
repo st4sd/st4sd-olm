@@ -1,12 +1,12 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: CatalogSource
 metadata:
-  name: st4sd-runtime-catalog
+  name: st4sd-catalog
   namespace: openshift-marketplace
 spec:
   sourceType: grpc
-  image: quay.io/ibmvassiliad/st4sd-olm-deploy-catalog:latest
-  displayName: ST4SD Runtime Catalog
+  image: quay.io/st4sd/st4sd-olm-catalog:latest
+  displayName: Catalog of ST4SD images
   publisher: ST4SD
   updateStrategy:
     registryPoll:

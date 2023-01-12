@@ -1,10 +1,11 @@
-module github.com/st4sd/st4sd-olm-deploy
+module github.com/st4sd/st4sd-olm
 
 go 1.19
 
 require (
 	github.com/onsi/ginkgo/v2 v2.6.0
 	github.com/onsi/gomega v1.24.1
+	github.com/openshift/client-go v0.0.0-20220603133046-984ee5ebedcf
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.10.3
 	k8s.io/apimachinery v0.26.0
@@ -13,6 +14,7 @@ require (
 )
 
 require (
+	github.com/openshift/api v0.0.0-20221013123534-96eec44e1979 // indirect
 	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 )
@@ -47,7 +49,7 @@ require (
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
-	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-logr/logr v1.2.3
 	github.com/go-logr/zapr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.20.0 // indirect

@@ -8,11 +8,11 @@ source ${dirScripts}/constants.sh
 
 export PATH=$PATH:`pwd`/bin
 
-export IMAGE_TAG_BASE="quay.io/ibmvassiliad/st4sd-olm-deploy"
-export CATALOG_IMG="quay.io/ibmvassiliad/st4sd-olm-deploy-catalog:latest"
+export IMAGE_TAG_BASE=${IMAGE_TAG_BASE:-"quay.io/st4sd/st4sd-olm"}
+export CATALOG_IMG=${CATALOG_IMG:-"quay.io/st4sd/st4sd-olm-catalog:latest"}
 
-operator="st4sd-olm-deploy"
-img_base="quay.io/ibmvassiliad/${operator}"
+operator="st4sd-olm"
+img_base="${IMAGE_TAG_BASE}"
 img_bundle="${img_base}-bundle:v${VERSION}"
 img_operator="${img_base}:v${VERSION}"
 
@@ -36,19 +36,26 @@ echo "Will include following bundles in catalog: ${all_bundles}"
 
 set -xe
 
+rm  bundle/manifests/*.yaml
 # VV: Put together the new bundle. It upgrades ${OLD_VERSION} to ${VERSION}
 mkdir -p bundle/manifests
 
-cp config/manifests/st4sd-olm-deploy.clusterserviceversion.yaml \
-   bundle/manifests/
+# cp config/manifests/st4sd-olm.clusterserviceversion.yaml \
+#    bundle/manifests/
 
 cp config/crd/bases/deploy.st4sd.ibm.com_simulationtoolkits.yaml \
    bundle/manifests/
 
-sed -i '' -e "s#quay.io/st4sd/st4sd-olm-deploy:v%%VERSION%%#${img_operator}#g" \
+sed -e "s#quay.io/st4sd/st4sd-olm:v%%VERSION%%#${img_operator}#g" \
            -e "s#%%VERSION%%#${VERSION}#g" \
-           -e "s#%%OLD_VERSION%%#${OLD_VERSION}#g" \
-    bundle/manifests/st4sd-olm-deploy.clusterserviceversion.yaml
+    config/manifests/st4sd-olm.clusterserviceversion.yaml >bundle/manifests/temp.yaml
+
+if [ -n "${OLD_VERSION}" ]; then
+    sed -e "s#%%OLD_VERSION%%#${OLD_VERSION}#g" bundle/manifests/temp.yaml >bundle/manifests/st4sd-olm.clusterserviceversion.yaml
+else
+    sed -e "s#replaces: st4sd-olm.v%%OLD_VERSION%%##g" bundle/manifests/temp.yaml >bundle/manifests/st4sd-olm.clusterserviceversion.yaml
+fi
+rm bundle/manifests/temp.yaml
 
 
 # VV: This builds and pushes bundle-${VERSION}

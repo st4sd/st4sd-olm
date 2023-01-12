@@ -30,8 +30,13 @@ const (
 	STATUS_FAILED     = "Failed"
 	STATUS_SUCCESSFUL = "Successful"
 	STATUS_UPDATING   = "Updating"
-	OPERATOR_VERSION  = "0.0.13"
 )
+
+// VV: This value is auto-updated on build, like so (it cannot be a const):
+//
+//	go build -ldflags="-X 'github.com/st4sd/st4sd-olm/api/v1alpha1.OPERATOR_VERSION=$VERSION'" \
+//	         -a -o manager main.go
+var OPERATOR_VERSION = "dev"
 
 type SimulationToolkitSpecSetup struct {
 	// Name of the Persistent Volume Claim (PVC) to store the virtual experiment instances.
@@ -94,14 +99,14 @@ type SimulationToolkitStatusCondition struct {
 	// Status of the condition, one of Paused, Updating, Failed, Successful, Unknown
 	Status string `json:"status,omitempty"`
 	// VersionID consists of the a / separated array of strings. The strings are (in this order)
-	// st4sd-odlm-deploy (this operator) version, Helm Chart version, ST4SD version.
+	// st4sd-olm (this operator) version, Helm Chart version, ST4SD version.
 	VersionID string `json:"versionID,omitempty"`
 }
 
 // SimulationToolkitStatus defines the observed state of SimulationToolkit
 type SimulationToolkitStatus struct {
 	// VersionID consists of the a / separated array of strings. The strings are (in this order)
-	// st4sd-olm-deploy (this operator) version, Helm Chart version, ST4SD version.
+	// st4sd-olm (this operator) version, Helm Chart version, ST4SD version.
 	VersionID string `json:"versionID,omitempty"`
 	// Status of the condition, one of Paused, Updating, Failed, Successful, Unknown or empty (i.e. Unknown)
 	Phase      string                             `json:"phase,omitempty"`

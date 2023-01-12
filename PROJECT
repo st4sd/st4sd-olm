@@ -4,8 +4,8 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: st4sd-olm-deploy
-repo: github.com/st4sd/st4sd-olm-deploy
+projectName: st4sd-olm
+repo: github.com/st4sd/st4sd-olm
 resources:
 - api:
     crdVersion: v1
@@ -14,7 +14,7 @@ resources:
   domain: st4sd.ibm.com
   group: deploy
   kind: SimulationToolkit
-  path: github.com/st4sd/st4sd-olm-deploy/api/v1alpha1
+  path: github.com/st4sd/st4sd-olm/api/v1alpha1
   plural: simulationtoolkits
   version: v1alpha1
 version: "3"
