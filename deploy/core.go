@@ -207,8 +207,15 @@ func HelmDeployPart(
 		client.Namespace = namespace
 		client.DryRun = dryRun
 		client.Devel = true
-		client.ResetValues = false
-		client.ReuseValues = true
+		if releaseName != RELEASE_CLUSTER_SCOPED {
+			// VV: RELEASE_CLUSTER_SCOPED modifies ClusterRolebinding and SecurityContextConstraints. We
+			// Do not want a user that has permissions to edit the values of the release to end up
+			// giving themselves more privileges using this operator as a proxy to edit the cluster-scoped objects.
+			// Therefore, THIS release will ALWAYS use whatever are the defaults in the helm chart.
+			// All other releases, can "ReuseValues" i.e. use w/e the helm-release values are.
+
+			client.ReuseValues = true
+		}
 		client.MaxHistory = 2
 
 		release, err = client.Run(releaseName, chart, values)
