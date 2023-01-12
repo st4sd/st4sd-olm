@@ -33,10 +33,10 @@ metadata:
     operatorframework.io/suggested-namespace: openshift-operators
     operators.operatorframework.io/builder: operator-sdk-v1.26.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: st4sd-olm.v0.0.2
+  name: st4sd-olm.v0.0.3
   namespace: placeholder
 spec:
-  replaces: st4sd-olm.v0.0.1
+  replaces: st4sd-olm.v0.0.2
   apiservicedefinitions: {}
   customresourcedefinitions:
     owned:
@@ -133,6 +133,15 @@ spec:
           - subjectaccessreviews
           verbs:
           - create
+        # VV: we need to be able to auto-detect the cluster domain, this means reading the Ingress config
+        - apiGroups:
+          - config.openshift.io
+          verbs:
+          - get
+          - list
+          - watch
+          resources:
+          - ingresses
         #### this is the equivalent to system:auth-delegator
         #### we need it for openshift/oauth-proxy
         - verbs:
@@ -423,7 +432,7 @@ spec:
                 - --leader-elect
                 command:
                 - /manager
-                image: "quay.io/st4sd/st4sd-olm:v0.0.2"
+                image: "quay.io/st4sd/st4sd-olm:v0.0.3"
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -479,4 +488,4 @@ spec:
   provider:
     name: IBM Research, Europe - Dublin
     url: st4sd.github.io/overview
-  version: "0.0.2"
+  version: "0.0.3"
