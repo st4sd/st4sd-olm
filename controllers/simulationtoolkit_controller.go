@@ -126,10 +126,6 @@ func (r *SimulationToolkitReconciler) ExpectedVersion() string {
 	return strings.Join([]string{deployv1alpha1.OPERATOR_VERSION, r.HelmChartVersion, r.ToolkitVersion}, "/")
 }
 
-//+kubebuilder:rbac:groups=core.st4sd.ibm.com,resources=st4sdruntimes,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core.st4sd.ibm.com,resources=st4sdruntimes/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=core.st4sd.ibm.com,resources=st4sdruntimes/finalizers,verbs=update
-
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -159,14 +155,14 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	allConditions := map[string]deployv1alpha1.SimulationToolkitStatusCondition{}
 
 	addBackToQueue := false
-	updateEntireObject := true
 
 	for i := range obj.Status.Conditions {
 		c := obj.Status.Conditions[i]
 		allConditions[c.Status] = c
 
 		if lastCondition.Status == deployv1alpha1.STATUS_UNKNOWN ||
-			(c.Status != deployv1alpha1.STATUS_UNKNOWN && c.LastTransitionTime.UnixMilli() > lastCondition.LastTransitionTime.UnixMilli()) {
+			(c.Status != deployv1alpha1.STATUS_UNKNOWN &&
+				c.LastTransitionTime.UnixMilli() > lastCondition.LastTransitionTime.UnixMilli()) {
 			lastCondition = c
 		}
 	}
@@ -259,10 +255,9 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			}
 		case deployv1alpha1.STATUS_UPDATING:
 			obj.ObjectMeta.Annotations[annotationLastConfigurationKey] = hashCurrent
-			updateEntireObject = true
 
 			transitionToUpdating("Deploying ST4SD now", "Updating")
-			err = r.UpdateStatus(ctx, obj, allConditions, updateEntireObject)
+			err = r.UpdateStatus(ctx, obj, allConditions, true)
 			if err != nil {
 				logger.Error(err, "Could not update status")
 				return r.Requeue(err)
@@ -272,25 +267,45 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			// If that fails, then we simply cannot deploy ST4SD here unless the user tells us which domain to use
 			var err error = nil
 
-			if obj.Spec.Setup.RouteDomain == "" {
-				if obj.Spec.Setup.DatastoreIdentifier == "" {
-					err = fmt.Errorf("unable to auto-generate routeDomain because datastoreIdentifier is unset")
-				} else {
-					ingress, inner_err := deploy.DiscoverClusterIngress()
-					if inner_err != nil {
-						err = errors.Wrap(err, "unable to auto-generate routeDomain")
-					} else {
-						routeDomain := fmt.Sprintf("%s-%s.%s", obj.Spec.Setup.DatastoreIdentifier,
-							req.NamespacedName.Namespace, ingress)
-						obj.Spec.Setup.RouteDomain = routeDomain
-					}
+			requiresClusterDomain := false
+			ingress := ""
+
+			if (obj.Spec.Setup.RouteDomain == "" && obj.Spec.Setup.DatastoreIdentifier != "") ||
+				strings.Contains(obj.Spec.Setup.RouteDomain, deployv1alpha1.INTERPOLATE_CLUSTER_INGRESS) {
+				requiresClusterDomain = true
+			} else if obj.Spec.Setup.DatastoreIdentifier == "" && obj.Spec.Setup.RouteDomain == "" {
+				err = fmt.Errorf("unable to auto-generate routeDomain because both " +
+					"datastoreIdentifier and routeDomain are unset")
+			}
+
+			if err == nil && requiresClusterDomain {
+				ingress, err = deploy.DiscoverClusterIngress()
+				if err != nil {
+					err = errors.Wrap(err, "unable to auto-generate routeDomain")
 				}
-			} else if obj.Spec.Setup.DatastoreIdentifier == "" {
+			}
+
+			if err == nil && requiresClusterDomain {
+				if obj.Spec.Setup.RouteDomain == "" {
+					// VV: If the RouteDomain is empty then use ${datastoreIdentifier}-${namespace}.${ingress}
+					routeDomain := fmt.Sprintf("%s-%s.%s", obj.Spec.Setup.DatastoreIdentifier,
+						req.NamespacedName.Namespace, ingress)
+					obj.Spec.Setup.RouteDomain = routeDomain
+				} else {
+					// VV: if the RouteDomain is set, then replace ${CLUSTER_INGRESS} with the cluster ingress
+					// The user decided how they wish their routeDomain to look like, there's no need for us
+					// to inject the namespace in the domain.
+					obj.Spec.Setup.RouteDomain = strings.ReplaceAll(
+						obj.Spec.Setup.RouteDomain, deployv1alpha1.INTERPOLATE_CLUSTER_INGRESS, ingress)
+				}
+			}
+
+			if err == nil && obj.Spec.Setup.DatastoreIdentifier == "" {
 				fields := strings.Split(obj.Spec.Setup.RouteDomain, ".")
 
 				if len(fields) < 2 {
-					err = fmt.Errorf("Expected RouteDomain to be in the form " +
-						"of <datastoreIdentifier>.<domain>, but was " + obj.Spec.Setup.RouteDomain)
+					err = fmt.Errorf("expected RouteDomain to be in the form "+
+						"of <datastoreIdentifier>.<domain>, but was %s", obj.Spec.Setup.RouteDomain)
 				} else {
 					obj.Spec.Setup.DatastoreIdentifier = fields[0]
 				}
@@ -336,7 +351,7 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 	}
 
-	err = r.UpdateStatus(ctx, obj, allConditions, updateEntireObject)
+	err = r.UpdateStatus(ctx, obj, allConditions, true)
 	if err != nil {
 		logger.Error(err, "Could not update status")
 		return r.Requeue(err)

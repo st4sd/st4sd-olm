@@ -30,6 +30,8 @@ const (
 	STATUS_FAILED     = "Failed"
 	STATUS_SUCCESSFUL = "Successful"
 	STATUS_UPDATING   = "Updating"
+
+	INTERPOLATE_CLUSTER_INGRESS = "${CLUSTER_INGRESS}"
 )
 
 // VV: This value is auto-updated on build, like so (it cannot be a const):
@@ -99,7 +101,7 @@ type SimulationToolkitStatusCondition struct {
 	// Status of the condition, one of Paused, Updating, Failed, Successful, Unknown
 	Status string `json:"status,omitempty"`
 	// VersionID consists of the a / separated array of strings. The strings are (in this order)
-	// st4sd-olm (this operator) version, Helm Chart version, ST4SD version.
+	//  st4sd-olm (this operator) version, Helm Chart version, ST4SD version.
 	VersionID string `json:"versionID,omitempty"`
 }
 

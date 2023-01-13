@@ -1,12 +1,16 @@
 kind: SimulationToolkit
 apiVersion: deploy.st4sd.ibm.com/v1alpha1
 metadata:
-  name: vassilis
+  name: my-st4sd
   namespace: vv-playground
 spec:
   setup:
-    routeDomain: vv.ve-5446-9ca4d14d48413d18ce61b80811ba4308-0000.us-south.containers.appdomain.cloud
-    datastoreIdentifier: vv
+    # If running on OpenShift, ${CLUSTER_DOMAIN} expands to the ingress of the cluster
+    # Make sure that the routeDomain you pick is available on the cluster. 
+    # For example, there should be NO other route on the cluster (in any namespace) with 
+    # the same domain.
+    routeDomain: my-st4sd.${CLUSTER_DOMAIN}
+    datastoreIdentifier: st4sd
     pvcDatastore: datastore-mongodb
     pvcInstances: workflow-instances-pvc
     pvcRuntimeService: runtime-service
