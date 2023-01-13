@@ -4,15 +4,15 @@ This repository contains the code to build the [Operator](https://operatorframew
 The ST4SD-Runtime is a python framework, and associated services, for creating and deploying virtual-experiments - data-flows which embody the measurement of properties of systems.
 
 There are three parts to the ST4SD-Runtime
-- [`st4sd-runtime-core`](https://github.ibm.com/st4sd/st4sd-runtime-core): The core python framework for describing and executing virtual experiments
-- [`st4sd-runtime-k8s`](https://github.ibm.com/st4sd/st4sd-runtime-k8s): Extensions which enable running and managing virtual-experiments on k8s clusters  
-- [`st4sd-runtime-service`](https://github.ibm.com/st4sd/st4sd-runtime-service): A RESTapi based service allowing users to add, start, stop and query virtual-experiments
+- [`st4sd-runtime-core`](https://github.com/st4sd/st4sd-runtime-core): The core python framework for describing and executing virtual experiments
+- [`st4sd-runtime-k8s`](https://github.com/st4sd/st4sd-runtime-k8s): Extensions which enable running and managing virtual-experiments on k8s clusters  
+- [`st4sd-runtime-service`](https://github.com/st4sd/st4sd-runtime-service): A RESTapi based service allowing users to add, start, stop and query virtual-experiments
 
 ## Features
 
 * Cross-platform data-flows
   * Supports multiple backends  (LSF, OpenShift/Kubernetes, local)
-  * Abstracts differences between backends allowing a single component description to be used
+  * Abstracts the differences between backends allowing a single component description to be used
   * Variables can be used to encapsulate platform specific options
   * Can define component and platform specific environments
 * Co-processing model
