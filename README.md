@@ -20,7 +20,7 @@ There are three parts to the ST4SD-Runtime
 * Simple to replicate workflow sub-graphs over sets of inputs 
 * Supports `do-while` constructs
 * Handles task persistence across backend allocation windows and allows user customisable restarts
-* Deploy workflows directly from github (Kubernetes stack)
+* Deploy workflows directly from GitHub (Kubernetes stack)
 * Store and retrieve data and metadata from st4sd-datastore
 
 ## More Information
@@ -61,7 +61,7 @@ Steps:
 10. Click on the `Simulation Toolkit For Scientific Discovery (ST4SD)` entry and wait for a new panel to pop up. 
     Click the `Install` button at the top left of this panel - you will transition to a new page.
     If the button label is `Uninstall`, then the operator is already installed on your cluster. 
-    In this caes, you do not need to re-install the operator - skip to step 13.
+    In this case, you do not need to re-install the operator - skip to step 13.
 11. In the new page, select the `stable` update channel. Set the `Installed Namespace` dropdown to `openshift-operators`. 
     Set `Update approval` to `Automatic` if you wish that ST4SD deployments you create via this operator to be auto-updated. 
     Set it to `Manual` if you wish to manually update this operator and therefore control when you receive new updates to 
@@ -102,7 +102,7 @@ Steps to install ST4SD in your namespace using `st4sd-olm`:
      filesystem mode (i.e. ReadWriteMany).
    - The PVC you create for the field `pvcRuntimeService` should support mounting under multiple pods in Read/Write, 
      filesystem mode (i.e. ReadWriteMany).
-2. Modify the ['basic.yaml'](examples/basic.yaml) YAML file to add the names of the PVCs and the desired RouteDomain of your ST4SD instance
+2. Modify the [basic.yaml](examples/basic.yaml) YAML file to add the names of the PVCs and the desired RouteDomain of your ST4SD instance
     - If you are using an OpenShift cluster on IBM Cloud, `st4sd-olm` can auto-detect your cluster ingress. 
       You can use `${CLUSTER_INGRESS}` to reference it in your `spec.setup.routeDomain` field (see example). 
-3. Create the ['basic.yaml'](examples/basic.yaml) YAML file (e.g. `oc apply -f examples/basic.yaml`).
+3. Create the [basic.yaml](examples/basic.yaml) YAML file (e.g. `oc apply -f examples/basic.yaml`).
