@@ -5,11 +5,11 @@ metadata:
   namespace: vv-playground
 spec:
   setup:
-    # If running on OpenShift, ${CLUSTER_DOMAIN} expands to the ingress of the cluster
+    # If running on OpenShift, ${CLUSTER_INGRESS} expands to the ingress of the cluster
     # Make sure that the routeDomain you pick is available on the cluster. 
     # For example, there should be NO other route on the cluster (in any namespace) with 
     # the same domain.
-    routeDomain: my-st4sd.${CLUSTER_DOMAIN}
+    routeDomain: my-st4sd.${CLUSTER_INGRESS}
     datastoreIdentifier: st4sd
     pvcDatastore: datastore-mongodb
     pvcInstances: workflow-instances-pvc

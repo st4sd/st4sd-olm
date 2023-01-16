@@ -1,0 +1,20 @@
+apiVersion: authorization.openshift.io/v1
+kind: Role
+metadata:
+  name: st4sd-olm-permissions
+  namespace: UPDATE-WITH-NAMESPACE
+  labels:
+    deploy.st4sd.ibm.com/component: st4sd-olm-permissions
+rules:
+- apiGroups:
+  - deploy.st4sd.ibm.com
+  resources:
+  - simulationtoolkits
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
