@@ -272,25 +272,25 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			// If that fails, then we simply cannot deploy ST4SD here unless the user tells us which domain to use
 			var err error = nil
 
-			requiresClusterDomain := false
+			requiresClusterIngress := false
 			ingress := ""
 
 			if (obj.Spec.Setup.RouteDomain == "" && obj.Spec.Setup.DatastoreIdentifier != "") ||
 				strings.Contains(obj.Spec.Setup.RouteDomain, deployv1alpha1.INTERPOLATE_CLUSTER_INGRESS) {
-				requiresClusterDomain = true
+				requiresClusterIngress = true
 			} else if obj.Spec.Setup.DatastoreIdentifier == "" && obj.Spec.Setup.RouteDomain == "" {
 				err = fmt.Errorf("unable to auto-generate routeDomain because both " +
 					"datastoreIdentifier and routeDomain are unset")
 			}
 
-			if err == nil && requiresClusterDomain {
+			if err == nil && requiresClusterIngress {
 				ingress, err = deploy.DiscoverClusterIngress()
 				if err != nil {
 					err = errors.Wrap(err, "unable to auto-generate routeDomain")
 				}
 			}
 
-			if err == nil && requiresClusterDomain {
+			if err == nil && requiresClusterIngress {
 				if obj.Spec.Setup.RouteDomain == "" {
 					// VV: If the RouteDomain is empty then use ${datastoreIdentifier}-${namespace}.${ingress}
 					routeDomain := fmt.Sprintf("%s-%s.%s", obj.Spec.Setup.DatastoreIdentifier,
