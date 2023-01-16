@@ -231,24 +231,29 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			"configurationOld", configurationOld, "deploymentStale", deploymentStale,
 			"hashLast", hashLast, "hashCurrent", hashCurrent,
 		)
-		soon := "WillStartUpdatingSoon"
+
 		switch lastCondition.Status {
 		case deployv1alpha1.STATUS_UNKNOWN:
-			transitionToUpdating("Starting deployment because setup.paused=false", soon)
+			transitionToUpdating("Starting deployment because setup.paused=false",
+				deployv1alpha1.REASON_UPDATE_SOON)
 		case deployv1alpha1.STATUS_SUCCESSFUL:
 			if configurationChanged {
-				transitionToUpdating("Updating Successful deployment to apply new Setup configuration", soon)
+				transitionToUpdating("Updating Successful deployment to apply new Setup configuration",
+					deployv1alpha1.REASON_UPDATE_SOON)
 			} else if deploymentStale {
-				transitionToUpdating("Updating Successful deployment to apply new Helm chart", soon)
+				transitionToUpdating("Updating Successful deployment to apply new Helm chart",
+					deployv1alpha1.REASON_UPDATE_SOON)
 			}
 		case deployv1alpha1.STATUS_FAILED:
 			if configurationChanged {
-				transitionToUpdating("Retrying Failed deployment to apply new Setup configuration", soon)
+				transitionToUpdating("Retrying Failed deployment to apply new Setup configuration",
+					deployv1alpha1.REASON_UPDATE_SOON)
 			} else if configurationOld {
 				why := fmt.Sprintf("Retrying Failed deployment after waiting for %d seconds", secondsDt)
-				transitionToUpdating(why, soon)
+				transitionToUpdating(why, deployv1alpha1.REASON_UPDATE_SOON)
 			} else if deploymentStale {
-				transitionToUpdating("Retrying Failed deployment to apply new Helm chart", soon)
+				transitionToUpdating("Retrying Failed deployment to apply new Helm chart",
+					deployv1alpha1.REASON_UPDATE_SOON)
 			} else {
 				// VV: We don't want to update the deployment right now, we may want to update it later
 				addBackToQueue = true
@@ -311,42 +316,49 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				}
 			}
 
-			if err == nil {
-				err = deploy.HelmDeploySimulationToolkit(r.HelmChartPath, &obj.Spec.Setup,
-					req.NamespacedName.Namespace, false)
-			}
-
-			if err == nil {
-				status := deployv1alpha1.STATUS_SUCCESSFUL
-				successful := allConditions[status]
-
-				successful.Status = status
-				successful.LastUpdateTime = v1.NewTime(time.Now())
-				successful.LastTransitionTime = successful.LastUpdateTime
-				successful.Message = "ST4SD deployed, enjoy!"
-				successful.Reason = "Success"
-
-				successful.VersionID = r.ExpectedVersion()
-				obj.Status.Phase = deployv1alpha1.STATUS_SUCCESSFUL
-				allConditions[status] = successful
-			} else {
-				status := deployv1alpha1.STATUS_FAILED
-				failed := allConditions[status]
-
-				failed.Status = status
-				failed.LastUpdateTime = v1.NewTime(time.Now())
-				failed.LastTransitionTime = failed.LastUpdateTime
-				failed.Message = fmt.Sprint("Failed to deploy ST4SD.", err)
-				failed.Reason = "HelmDeploymentFailed"
-
-				obj.Status.Phase = deployv1alpha1.STATUS_FAILED
-
-				failed.VersionID = r.ExpectedVersion()
-
-				allConditions[status] = failed
-
-				logger.Info("Failed to deploy ST4SD", "error", err)
+			if hashCurrent != obj.Spec.Setup.Hash() {
+				// VV: We've made changes to the definition of the Object, we'll do the update the next time
+				// we reconcile this object
 				addBackToQueue = true
+				transitionToUpdating("Patched definition", deployv1alpha1.REASON_UPDATE_SOON)
+			} else {
+				if err == nil {
+					err = deploy.HelmDeploySimulationToolkit(r.HelmChartPath, &obj.Spec.Setup,
+						req.NamespacedName.Namespace, false)
+				}
+
+				if err == nil {
+					status := deployv1alpha1.STATUS_SUCCESSFUL
+					successful := allConditions[status]
+
+					successful.Status = status
+					successful.LastUpdateTime = v1.NewTime(time.Now())
+					successful.LastTransitionTime = successful.LastUpdateTime
+					successful.Message = "ST4SD deployed, enjoy!"
+					successful.Reason = "Success"
+
+					successful.VersionID = r.ExpectedVersion()
+					obj.Status.Phase = deployv1alpha1.STATUS_SUCCESSFUL
+					allConditions[status] = successful
+				} else {
+					status := deployv1alpha1.STATUS_FAILED
+					failed := allConditions[status]
+
+					failed.Status = status
+					failed.LastUpdateTime = v1.NewTime(time.Now())
+					failed.LastTransitionTime = failed.LastUpdateTime
+					failed.Message = fmt.Sprint("Failed to deploy ST4SD.", err)
+					failed.Reason = "HelmDeploymentFailed"
+
+					obj.Status.Phase = deployv1alpha1.STATUS_FAILED
+
+					failed.VersionID = r.ExpectedVersion()
+
+					allConditions[status] = failed
+
+					logger.Info("Failed to deploy ST4SD", "error", err)
+					addBackToQueue = true
+				}
 			}
 		}
 	}

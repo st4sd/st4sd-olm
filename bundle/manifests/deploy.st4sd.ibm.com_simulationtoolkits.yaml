@@ -78,7 +78,7 @@ spec:
                   pvcInstances:
                     description: Name of the Persistent Volume Claim (PVC) to store
                       the virtual experiment instances. This PVC must already exist.
-                      It must also support mounting the PVC in mutliple pods (ReadWriteMany)
+                      It must also support mounting the PVC in multiple pods (ReadWriteMany)
                       in Filesystem mode. This PVC must already exist.
                     type: string
                   pvcRuntimeService:

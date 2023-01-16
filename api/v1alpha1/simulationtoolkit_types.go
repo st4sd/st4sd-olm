@@ -32,6 +32,7 @@ const (
 	STATUS_UPDATING   = "Updating"
 
 	INTERPOLATE_CLUSTER_INGRESS = "${CLUSTER_INGRESS}"
+	REASON_UPDATE_SOON          = "WillStartUpdatingSoon"
 )
 
 // VV: This value is auto-updated on build, like so (it cannot be a const):
@@ -42,7 +43,7 @@ var OPERATOR_VERSION = "dev"
 
 type SimulationToolkitSpecSetup struct {
 	// Name of the Persistent Volume Claim (PVC) to store the virtual experiment instances.
-	// This PVC must already exist. It must also support mounting the PVC in mutliple pods
+	// This PVC must already exist. It must also support mounting the PVC in multiple pods
 	// (ReadWriteMany) in Filesystem mode.
 	// This PVC must already exist.
 	PVCInstances string `json:"pvcInstances,omitempty"`

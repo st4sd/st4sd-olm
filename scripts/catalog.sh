@@ -40,6 +40,8 @@ rm  bundle/manifests/*.yaml
 # VV: Put together the new bundle. It upgrades ${OLD_VERSION} to ${VERSION}
 mkdir -p bundle/manifests
 
+# VV: Ensure CRD is up-to-date
+make manifests
 # cp config/manifests/st4sd-olm.clusterserviceversion.yaml \
 #    bundle/manifests/
 
