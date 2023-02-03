@@ -199,7 +199,7 @@ func HelmDeployPart(
 	inNamespace []*release.Release,
 ) error {
 	logger := log.Log.WithName("Deploy")
-	values, err := ConfigurationToHelmValues(configuration, releaseName)
+	values, err := ConfigurationToHelmValues(chart, configuration, releaseName)
 
 	if err != nil {
 		return err
@@ -315,7 +315,8 @@ func HelmDeploySimulationToolkit(
 	settings.SetNamespace(namespace)
 	actionConfig := new(action.Configuration)
 
-	// VV: Use vanilla log here because helm log statements do not use "keyValue" pairs. This is incompatible with "log"
+	// VV: Use vanilla log here because helm log statements do not use "keyValue" pairs.
+	// This is incompatible with "log"
 	if err := actionConfig.Init(settings.RESTClientGetter(), namespace, "", vanilla_log.Printf); err != nil {
 		logger.Info("Could not initialize helm/action.Configuration")
 		return err
@@ -409,6 +410,7 @@ func TriggerDeploymentConfigs(release *release.Release, kubeClient kube.Interfac
 }
 
 func ConfigurationToHelmValues(
+	chart *chart.Chart,
 	configuration *st4sdv1alpha1.SimulationToolkitSpecSetup,
 	releaseName string,
 ) (map[string]interface{}, error) {
@@ -471,6 +473,11 @@ func ConfigurationToHelmValues(
 			"installRBACNamespaced", "installDeployer",
 			"installGithubSecretOAuth",
 		)
+		// VV: st4sd-deployment pushes 2 sets of images for each release:
+		// :platform-release-latest and :bundle-${HELM_CHART_VERSION}
+		// RELEASE_NAMESPACED_UNMANAGED uses the imagesVariant value to populate the
+		// st4sd-runtime-service ConfigMap
+		values["imagesVariant"] = fmt.Sprintf(":bundle-%s", chart.AppVersion())
 	case RELEASE_NAMESPACED_MANAGED:
 		switchOn = append(switchOn,
 			"installWorkflowOperator", "installDatastore", "installRuntimeService",
@@ -483,6 +490,9 @@ func ConfigurationToHelmValues(
 			"installRegistryBackendConfigMap", "installRegistryUINginxConfigMap", "installDeployer",
 			"installGithubSecretOAuth",
 		)
+		// RELEASE_NAMESPACED_UNMANAGED uses the imagesVariant value to populate the
+		// DeploymentConfig objects
+		values["imagesVariant"] = fmt.Sprintf(":bundle-%s", chart.AppVersion())
 	default:
 		return values, fmt.Errorf("unknown release %s", releaseName)
 	}
