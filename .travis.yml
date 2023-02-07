@@ -10,7 +10,7 @@ install: []
 
 stages:
 - name: image-no-push
-  if: branch != main
+  if: branch != main AND tag is blank
 - name: image-push
   if: branch = main AND type != pull_request
 - name: catalog-push
