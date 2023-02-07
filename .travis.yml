@@ -1,0 +1,43 @@
+language: minimal
+
+services:
+- docker
+
+install: []
+
+stages:
+- name: image-no-push
+  if: branch != main
+- name: image-push
+  if: branch == main AND type != pull_request
+- name: catalog-push
+  if: tag is present
+
+matrix:
+  include:
+  - stage: image-no-push
+    script:
+    - export DOCKER_REGISTRY=${DOCKER_REGISTRY:-quay.io}
+    - export IMAGE_NAME=${IMAGE_NAME:-/official-base/st4sd-olm}
+    - export IMAGE_TAG_BASE="${DOCKER_REGISTRY}${IMAGE_NAME}"
+    - export IMAGE_PUSH=no
+    - ./scripts/build.sh
+  - stage: image-push
+    install:
+    - docker login -u "${DOCKER_USERNAME}" -p "${DOCKER_TOKEN}" "${DOCKER_REGISTRY}"
+    script:
+    - export DOCKER_REGISTRY=${DOCKER_REGISTRY:-quay.io}
+    - export IMAGE_NAME=${IMAGE_NAME:-/official-base/st4sd-olm}
+    - export IMAGE_TAG_BASE="${DOCKER_REGISTRY}${IMAGE_NAME}"
+    - export IMAGE_PUSH=yes
+    - ./scripts/build.sh
+  - stage: catalog-push
+    install:
+    - docker login -u "${DOCKER_USERNAME}" -p "${DOCKER_TOKEN}" "${DOCKER_REGISTRY}"
+    script:
+    - export DOCKER_REGISTRY=${DOCKER_REGISTRY:-quay.io}
+    - export IMAGE_NAME=${IMAGE_NAME:-/official-base/st4sd-olm}
+    - export IMAGE_TAG_BASE="${DOCKER_REGISTRY}${IMAGE_NAME}"
+    - export CATALOG_IMG=${IMAGE_TAG_BASE}-catalog:latest
+    - export CATALOG_PUSH=yes
+    - ./scripts/catalog.sh
