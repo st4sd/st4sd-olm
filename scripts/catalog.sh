@@ -41,8 +41,6 @@ mkdir -p bundle/manifests
 
 # VV: Ensure CRD is up-to-date
 make manifests
-# cp config/manifests/st4sd-olm.clusterserviceversion.yaml \
-#    bundle/manifests/
 
 cp config/crd/bases/deploy.st4sd.ibm.com_simulationtoolkits.yaml \
    bundle/manifests/
@@ -50,14 +48,6 @@ cp config/crd/bases/deploy.st4sd.ibm.com_simulationtoolkits.yaml \
 sed -e "s#quay.io/st4sd/official-base/st4sd-olm:v%%VERSION%%#${img_operator}#g" \
            -e "s#%%VERSION%%#${VERSION}#g" \
     config/manifests/st4sd-olm.clusterserviceversion.yaml >bundle/manifests/st4sd-olm.clusterserviceversion.yaml
-
-# if [ -n "${OLD_VERSION}" ]; then
-#     sed -e "s#%%OLD_VERSION%%#${OLD_VERSION}#g" bundle/manifests/temp.yaml >bundle/manifests/st4sd-olm.clusterserviceversion.yaml
-# else
-#     sed -e "s#replaces: st4sd-olm.v%%OLD_VERSION%%##g" bundle/manifests/temp.yaml >bundle/manifests/st4sd-olm.clusterserviceversion.yaml
-# fi
-# rm bundle/manifests/temp.yaml
-
 
 # VV: This builds and pushes bundle-${VERSION}
 make bundle-build
