@@ -3,13 +3,12 @@
 dirScripts=`dirname "${0}"`
 
 cd "${dirScripts}/.."
-
-source ${dirScripts}/constants.sh
+source scripts/constants.sh
 
 export PATH=$PATH:`pwd`/bin
 
-export IMAGE_TAG_BASE=${IMAGE_TAG_BASE:-"quay.io/st4sd/st4sd-olm"}
-export CATALOG_IMG=${CATALOG_IMG:-"quay.io/st4sd/st4sd-olm-catalog:latest"}
+export IMAGE_TAG_BASE=${IMAGE_TAG_BASE:-"quay.io/st4sd/official-base/st4sd-olm"}
+export CATALOG_IMG=${CATALOG_IMG:-"quay.io/st4sd/official-base/st4sd-olm-catalog:latest"}
 
 operator="st4sd-olm"
 img_base="${IMAGE_TAG_BASE}"
@@ -42,23 +41,13 @@ mkdir -p bundle/manifests
 
 # VV: Ensure CRD is up-to-date
 make manifests
-# cp config/manifests/st4sd-olm.clusterserviceversion.yaml \
-#    bundle/manifests/
 
 cp config/crd/bases/deploy.st4sd.ibm.com_simulationtoolkits.yaml \
    bundle/manifests/
 
-sed -e "s#quay.io/st4sd/st4sd-olm:v%%VERSION%%#${img_operator}#g" \
+sed -e "s#quay.io/st4sd/official-base/st4sd-olm:v%%VERSION%%#${img_operator}#g" \
            -e "s#%%VERSION%%#${VERSION}#g" \
-    config/manifests/st4sd-olm.clusterserviceversion.yaml >bundle/manifests/temp.yaml
-
-if [ -n "${OLD_VERSION}" ]; then
-    sed -e "s#%%OLD_VERSION%%#${OLD_VERSION}#g" bundle/manifests/temp.yaml >bundle/manifests/st4sd-olm.clusterserviceversion.yaml
-else
-    sed -e "s#replaces: st4sd-olm.v%%OLD_VERSION%%##g" bundle/manifests/temp.yaml >bundle/manifests/st4sd-olm.clusterserviceversion.yaml
-fi
-rm bundle/manifests/temp.yaml
-
+    config/manifests/st4sd-olm.clusterserviceversion.yaml >bundle/manifests/st4sd-olm.clusterserviceversion.yaml
 
 # VV: This builds and pushes bundle-${VERSION}
 make bundle-build

@@ -2,7 +2,7 @@ kind: SimulationToolkit
 apiVersion: deploy.st4sd.ibm.com/v1alpha1
 metadata:
   name: my-st4sd
-  namespace: vv-playground
+  namespace: my-namespace
 spec:
   setup:
     # If running on OpenShift, ${CLUSTER_INGRESS} expands to the ingress of the cluster
