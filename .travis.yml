@@ -9,7 +9,7 @@ stages:
 - name: image-no-push
   if: branch != main
 - name: image-push
-  if: branch == main AND type != pull_request
+  if: branch = main AND type != pull_request
 - name: catalog-push
   if: tag is present
 
