@@ -1,7 +1,10 @@
-language: minimal
+language: go
 
 services:
 - docker
+
+go:
+  - 1.19.x
 
 install: []
 
