@@ -5,7 +5,7 @@ metadata:
   namespace: openshift-marketplace
 spec:
   sourceType: grpc
-  image: quay.io/st4sd/st4sd-olm-catalog:latest
+  image: quay.io/st4sd/official-base/st4sd-olm-catalog:latest
   displayName: Catalog of ST4SD images
   publisher: ST4SD
   updateStrategy:
