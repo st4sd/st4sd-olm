@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export IMAGE_PUSH=${PUSH_IMAGE:-yes}
+export IMAGE_PUSH=${IMAGE_PUSH:-yes}
 set -xe
 dirScripts=`dirname "${0}"`
 
