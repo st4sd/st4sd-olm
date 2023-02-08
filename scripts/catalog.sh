@@ -85,7 +85,7 @@ echo "---" >>catalog/index.yaml
 # version[i+1] replaces version[i]
 # This is good enough for now, in the future we can have a smarter way to build the graph
 python3 <<EOF >>catalog/index.yaml
-import yaml
+import json
 versions = ${python_versions}
 
 channel = {
@@ -101,7 +101,7 @@ channel = {
 }
 
 channel['entries'].insert(0, {"name": f"${operator}.v{versions[0]}"})
-print(yaml.dump(channel))
+print(json.dumps(channel))
 EOF
 
 # VV: Sanity check before building the catalog image and pushing it
