@@ -7,6 +7,12 @@ source scripts/constants.sh
 
 export PATH=$PATH:`pwd`/bin
 
+# VV: install OPM if it's not in PATH
+if ! command -v opm >/dev/null; then
+  echo "Installing opm binary"
+  make opm
+fi
+
 export IMAGE_TAG_BASE=${IMAGE_TAG_BASE:-"quay.io/st4sd/official-base/st4sd-olm"}
 export CATALOG_IMG=${CATALOG_IMG:-"quay.io/st4sd/official-base/st4sd-olm-catalog:latest"}
 
@@ -35,7 +41,7 @@ echo "Will include following bundles in catalog: ${all_bundles}"
 
 set -xe
 
-rm  bundle/manifests/*.yaml
+rm -f bundle/manifests/*.yaml
 # VV: Put together the new bundle. It upgrades ${OLD_VERSION} to ${VERSION}
 mkdir -p bundle/manifests
 
