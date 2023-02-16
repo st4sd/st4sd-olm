@@ -22,6 +22,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -78,25 +79,24 @@ func (r *SimulationToolkitReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func (r *SimulationToolkitReconciler) UpdateStatus(
-	ctx context.Context, obj *deployv1alpha1.SimulationToolkit,
+	ctx context.Context, obj *deployv1alpha1.SimulationToolkit, patch *client.Patch,
 	allConditions map[string]deployv1alpha1.SimulationToolkitStatusCondition,
 	updateEntireObject bool,
-) error {
+) (*deployv1alpha1.SimulationToolkit, error) {
 	var err error = nil
 
-	phase := obj.Status.Phase
-	versionID := obj.Status.VersionID
-
 	if updateEntireObject {
-		err = r.Update(ctx, obj)
+		err = r.Patch(ctx, obj, *patch)
 	}
 
 	if err != nil {
-		return err
+		return nil, errors.Wrap(err, "error while updating entire object")
 	}
 
 	obj.Status.Conditions = make([]deployv1alpha1.SimulationToolkitStatusCondition, len(allConditions))
 	idx := 0
+
+	var lastConditionTransition int64 = math.MinInt64
 
 	for _, key := range []string{
 		deployv1alpha1.STATUS_PAUSED, deployv1alpha1.STATUS_FAILED,
@@ -104,22 +104,27 @@ func (r *SimulationToolkitReconciler) UpdateStatus(
 		if c, ok := allConditions[key]; ok {
 			obj.Status.Conditions[idx] = c
 			idx++
+
+			// VV: Propagate the Phase and VersionID of the most recent condition to the Status of the CR
+			if lastConditionTransition < c.LastUpdateTime.UnixMicro() {
+				lastConditionTransition = c.LastTransitionTime.UnixMicro()
+				obj.Status.Phase = key
+				obj.Status.VersionID = c.VersionID
+			}
 		}
 	}
 
-	obj.Status.Phase = phase
-	obj.Status.VersionID = versionID
-
-	err = r.Status().Update(ctx, obj)
+	err = r.Status().Patch(ctx, obj, *patch)
 
 	if err != nil {
-		return err
+		return nil, errors.Wrap(err, "error while updating status")
 	}
 
 	// VV: The object is now different, get the most up-to-date version
-	err = r.Get(ctx, types.NamespacedName{Namespace: obj.ObjectMeta.Namespace, Name: obj.ObjectMeta.Name}, obj)
+	latest := &deployv1alpha1.SimulationToolkit{}
+	err = r.Get(ctx, types.NamespacedName{Namespace: obj.ObjectMeta.Namespace, Name: obj.ObjectMeta.Name}, latest)
 
-	return err
+	return latest, err
 }
 
 func (r *SimulationToolkitReconciler) ExpectedVersion() string {
@@ -143,6 +148,8 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			return r.Requeue(err)
 		}
 	}
+
+	patch := client.MergeFrom(obj.DeepCopy())
 
 	// VV: Do not bother with objects that are marked for Deletion - we *could* consider that this means
 	// a user wishes to un-deploy but let the system admin deal with this scenario.
@@ -203,6 +210,7 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 			updating.VersionID = r.ExpectedVersion()
 			obj.Status.Phase = deployv1alpha1.STATUS_UPDATING
+			obj.Status.VersionID = updating.VersionID
 			allConditions[deployv1alpha1.STATUS_UPDATING] = updating
 		}
 
@@ -215,7 +223,7 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		If configuration has changed since last time we deployed/updated:
 		  Successful => Updating
 		Else:
-			stay in the same
+			stay in the same state
 		*/
 		now := v1.NewTime(time.Now())
 		secondsDt := now.Unix() - lastCondition.LastTransitionTime.Unix()
@@ -262,7 +270,8 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			obj.ObjectMeta.Annotations[annotationLastConfigurationKey] = hashCurrent
 
 			transitionToUpdating("Deploying ST4SD now", "Updating")
-			err = r.UpdateStatus(ctx, obj, allConditions, true)
+
+			obj, err = r.UpdateStatus(ctx, obj, &patch, allConditions, true)
 			if err != nil {
 				logger.Error(err, "Could not update status")
 				return r.Requeue(err)
@@ -270,7 +279,6 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 			// VV: Right before we deploy this, check if `routeDomain` is unset. If so, try to discover it.
 			// If that fails, then we simply cannot deploy ST4SD here unless the user tells us which domain to use
-			var err error = nil
 
 			requiresClusterIngress := false
 			ingress := ""
@@ -334,11 +342,12 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 					successful.Status = status
 					successful.LastUpdateTime = v1.NewTime(time.Now())
 					successful.LastTransitionTime = successful.LastUpdateTime
-					successful.Message = "ST4SD deployed, enjoy!"
+					successful.Message = "Successfully deployed ST4SD, enjoy!"
 					successful.Reason = "Success"
 
 					successful.VersionID = r.ExpectedVersion()
 					obj.Status.Phase = deployv1alpha1.STATUS_SUCCESSFUL
+					obj.Status.VersionID = successful.VersionID
 					allConditions[status] = successful
 				} else {
 					status := deployv1alpha1.STATUS_FAILED
@@ -350,9 +359,10 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 					failed.Message = fmt.Sprint("Failed to deploy ST4SD.", err)
 					failed.Reason = "HelmDeploymentFailed"
 
-					obj.Status.Phase = deployv1alpha1.STATUS_FAILED
-
 					failed.VersionID = r.ExpectedVersion()
+
+					obj.Status.Phase = deployv1alpha1.STATUS_FAILED
+					obj.Status.VersionID = failed.VersionID
 
 					allConditions[status] = failed
 
@@ -363,7 +373,7 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 	}
 
-	err = r.UpdateStatus(ctx, obj, allConditions, true)
+	_, err = r.UpdateStatus(ctx, obj, &patch, allConditions, true)
 	if err != nil {
 		logger.Error(err, "Could not update status")
 		return r.Requeue(err)
