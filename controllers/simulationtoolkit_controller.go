@@ -22,6 +22,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
 	"time"
 
@@ -95,12 +96,21 @@ func (r *SimulationToolkitReconciler) UpdateStatus(
 	obj.Status.Conditions = make([]deployv1alpha1.SimulationToolkitStatusCondition, len(allConditions))
 	idx := 0
 
+	var lastConditionTransition int64 = math.MinInt64
+
 	for _, key := range []string{
 		deployv1alpha1.STATUS_PAUSED, deployv1alpha1.STATUS_FAILED,
 		deployv1alpha1.STATUS_SUCCESSFUL, deployv1alpha1.STATUS_UPDATING} {
 		if c, ok := allConditions[key]; ok {
 			obj.Status.Conditions[idx] = c
 			idx++
+
+			// VV: Propagate the Phase and VersionID of the most recent condition to the Status of the CR
+			if lastConditionTransition < c.LastUpdateTime.UnixMicro() {
+				lastConditionTransition = c.LastTransitionTime.UnixMicro()
+				obj.Status.Phase = key
+				obj.Status.VersionID = c.VersionID
+			}
 		}
 	}
 
@@ -200,6 +210,7 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 			updating.VersionID = r.ExpectedVersion()
 			obj.Status.Phase = deployv1alpha1.STATUS_UPDATING
+			obj.Status.VersionID = updating.VersionID
 			allConditions[deployv1alpha1.STATUS_UPDATING] = updating
 		}
 
@@ -212,7 +223,7 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		If configuration has changed since last time we deployed/updated:
 		  Successful => Updating
 		Else:
-			stay in the same
+			stay in the same state
 		*/
 		now := v1.NewTime(time.Now())
 		secondsDt := now.Unix() - lastCondition.LastTransitionTime.Unix()
@@ -331,11 +342,12 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 					successful.Status = status
 					successful.LastUpdateTime = v1.NewTime(time.Now())
 					successful.LastTransitionTime = successful.LastUpdateTime
-					successful.Message = "ST4SD deployed, enjoy!"
+					successful.Message = "Successfully deployed ST4SD, enjoy!"
 					successful.Reason = "Success"
 
 					successful.VersionID = r.ExpectedVersion()
 					obj.Status.Phase = deployv1alpha1.STATUS_SUCCESSFUL
+					obj.Status.VersionID = successful.VersionID
 					allConditions[status] = successful
 				} else {
 					status := deployv1alpha1.STATUS_FAILED
@@ -347,9 +359,10 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 					failed.Message = fmt.Sprint("Failed to deploy ST4SD.", err)
 					failed.Reason = "HelmDeploymentFailed"
 
-					obj.Status.Phase = deployv1alpha1.STATUS_FAILED
-
 					failed.VersionID = r.ExpectedVersion()
+
+					obj.Status.Phase = deployv1alpha1.STATUS_FAILED
+					obj.Status.VersionID = failed.VersionID
 
 					allConditions[status] = failed
 
