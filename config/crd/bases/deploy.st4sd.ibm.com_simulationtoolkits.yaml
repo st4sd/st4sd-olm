@@ -88,8 +88,8 @@ spec:
                     type: string
                   routeDomain:
                     description: "Domain to use in the Route object of the ST4SD OAuthProxy
-                      side-car container. Consider using the format: ${clusterHumanReadableUID}.${clusterDomain}.
-                      You can find the ${clusterDomain} of your OpenShift cluster
+                      side-car container. Consider using the format: ${clusterHumanReadableUID}.${CLUSTER_INGRESS}.
+                      You can find the ${CLUSTER_INGRESS} of your OpenShift cluster
                       via \n oc get ingress.v1.config.openshift.io cluster -o=jsonpath='{.spec.domain}'"
                     type: string
                   secretDSMongoUserPass:

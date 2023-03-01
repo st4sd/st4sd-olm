@@ -427,6 +427,7 @@ func ConfigurationToHelmValues(
 	if datastoreIdentifier == "" {
 		datastoreIdentifier = fields[0]
 	}
+	routePrefix := fields[0]
 
 	values := map[string]interface{}{
 		"pvcForWorkflowInstances":      configuration.PVCInstances,
@@ -493,6 +494,7 @@ func ConfigurationToHelmValues(
 		// RELEASE_NAMESPACED_UNMANAGED uses the imagesVariant value to populate the
 		// DeploymentConfig objects
 		values["imagesVariant"] = fmt.Sprintf(":bundle-%s", chart.AppVersion())
+		values["routePrefix"] = routePrefix
 	default:
 		return values, fmt.Errorf("unknown release %s", releaseName)
 	}
