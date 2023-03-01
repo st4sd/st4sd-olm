@@ -11,6 +11,9 @@ spec:
     # the same domain.
     routeDomain: my-st4sd.${CLUSTER_INGRESS}
     datastoreIdentifier: st4sd
+
+    # Make sure that these PersistentVolumeClaim (PVC) objects exist in the same namespace
+    # See the README.md instructions for more information.
     pvcDatastore: datastore-mongodb
     pvcInstances: workflow-instances-pvc
     pvcRuntimeService: runtime-service

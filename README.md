@@ -48,7 +48,7 @@ Steps:
 
 1. Clone the repository, and cd into the `st4sd-olm` directory.
 2. Login to your OpenShift web console. Also log in on a terminal to your OpenShift cluster using the `oc` command-line interface.
-3. In your terminal, use oc to apply the [`deploy.yaml`](examples/deploy.yaml) objects (e.g. `oc apply -f deploy/deploy.yaml`)
+3. In your terminal, use oc to apply the [`deploy.yaml`](examples/deploy.yaml) objects (e.g. `oc apply -f examples/deploy.yaml`)
 4. You should see a new pod named `st4sd-catalog-XXXX` in the namespace `openshift-marketplace`.
 5. Wait for the pod to transition to the `Running` state and then wait for 30 more seconds.
 6. Switch back to the OpenShift Web Console page on your browser. Make sure you are in the `Administrator` view. 
@@ -94,6 +94,8 @@ The steps below assume that you:
     
 
 Steps to install ST4SD in your namespace using `st4sd-olm`:
+
+If you have already installed ST4SD using the [st4sd-deployment instructions](https://github.com/st4sd/st4sd-deployment/blob/main/docs/install-requirements.md#storage-setup) then inspect the `deployment-options.yaml` file you created for ST4SD. Re-use the PersistentVolumeClaim (PVC) objects and `routePrefix` you selected when you deployed ST4SD manually. The st4sd-olm operator will import your existing deployment and keep it up to date in the future.
 
 1. Create the 3 PVCs following the [st4sd-deployment instructions](https://github.com/st4sd/st4sd-deployment/blob/main/docs/install-requirements.md#storage-setup).
    - The PersistentVolumeClaim (PVC) object you create for the field `spec.setup.pvcInstances` should support mounting 
