@@ -10,7 +10,8 @@ spec:
   publisher: ST4SD
   updateStrategy:
     registryPoll:
-      interval: 15m
+      # Your cluster will check for a new ST4SD version every 60 minutes
+      interval: 60m
 
 ---
 

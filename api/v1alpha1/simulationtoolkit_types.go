@@ -65,8 +65,8 @@ type SimulationToolkitSpecSetup struct {
 	DatastoreIdentifier string `json:"datastoreIdentifier,omitempty"`
 
 	// Domain to use in the Route object of the ST4SD OAuthProxy side-car container.
-	// Consider using the format: ${clusterHumanReadableUID}.${clusterDomain}.
-	// You can find the ${clusterDomain} of your OpenShift cluster via
+	// Consider using the format: ${clusterHumanReadableUID}.${CLUSTER_INGRESS}.
+	// You can find the ${CLUSTER_INGRESS} of your OpenShift cluster via
 	//
 	// oc get ingress.v1.config.openshift.io cluster -o=jsonpath='{.spec.domain}'
 	RouteDomain string `json:"routeDomain,omitempty"`

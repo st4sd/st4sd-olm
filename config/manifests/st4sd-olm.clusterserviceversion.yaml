@@ -19,9 +19,9 @@ metadata:
           },
           "spec": {
             "setup": {
-              "routeDomain": "my-st4sd.mycluster.domain",
+              "routeDomain": "my-st4sd.${CLUSTER_INGRESS}",
               "datastoreIdentifier": "myST4SD",
-              "pvcDatastore": "datastore-monbodb",
+              "pvcDatastore": "datastore-mongodb",
               "pvcInstances": "workflow-instances",
               "pvcRuntimeService": "runtime-service"
             }
