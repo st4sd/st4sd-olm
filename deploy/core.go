@@ -26,6 +26,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -47,6 +48,7 @@ import (
 	"helm.sh/helm/v3/pkg/release"
 
 	configv1 "github.com/openshift/client-go/config/clientset/versioned/typed/config/v1"
+	routev1 "github.com/openshift/client-go/route/clientset/versioned/typed/route/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	vanilla_log "log"
@@ -58,6 +60,10 @@ const (
 	RELEASE_NAMESPACED_MANAGED   = "st4sd-namespaced-managed"
 )
 
+const (
+	PATTERN_FAILED_TO_PATCH = `cannot patch "(?P<Object>.+)" with kind (?P<Kind>[^:]+)`
+)
+
 func DiscoverClusterIngress() (string, error) {
 	config, err := ctrl.GetConfig()
 
@@ -67,7 +73,8 @@ func DiscoverClusterIngress() (string, error) {
 	configV1Client, err := configv1.NewForConfig(config)
 
 	if err != nil {
-		return "", errors.Wrap(err, "unable to discover default cluster domain because I could not build a configV1Client")
+		return "", errors.Wrap(err, "unable to discover default cluster domain because I could not"+
+			" build a configV1Client")
 	}
 
 	ingress, err := configV1Client.Ingresses().Get(context.TODO(), "cluster", v1.GetOptions{})
@@ -192,6 +199,20 @@ func (r *RecordDeployedChart) Run(
 	return renderedManifests, nil
 }
 
+func routeDelete(routeName, namespace, releaseName string, logger logr.Logger) error {
+	logger.Info("OpenShift forbids patching the Route " + routeName +
+		" in " + namespace + " - deleting the offending object")
+	config, _ := ctrl.GetConfig()
+	routeClient, err := routev1.NewForConfig(config)
+
+	if err != nil {
+		return errors.Wrapf(err, "unable to create a routeClient for deleting Route %s/%s", namespace, routeName)
+	}
+
+	err = routeClient.Routes(namespace).Delete(context.TODO(), routeName, v1.DeleteOptions{})
+	return err
+}
+
 func HelmDeployPart(
 	namespace, releaseName, helmChartPath string, dryRun bool,
 	configuration *st4sdv1alpha1.SimulationToolkitSpecSetup,
@@ -242,7 +263,49 @@ func HelmDeployPart(
 		}
 		client.MaxHistory = 2
 
-		release, err = client.Run(releaseName, chart, values)
+		max_retries := 10
+
+		for max_retries >= 0 {
+			release, err = client.Run(releaseName, chart, values)
+
+			if err != nil {
+				msg := err.Error()
+
+				r := regexp.MustCompile(PATTERN_FAILED_TO_PATCH)
+				// VV: allPatchProblems has the format [match index][0: entire matched string, 1: Object, 2: Kind]
+				allPatchProblems := r.FindAllStringSubmatch(msg, -1)
+
+				retryThisHelmDeployment := true
+				for _, s := range allPatchProblems {
+					if len(s) == 3 {
+						if s[2] == "Route" {
+							// VV: OpenShift does not support patching the host of a route.
+							// This can happen if a user deploys ST4SD and then decides that they'd like to use
+							// a different route. We need to delete the offending Route object and retry.
+							err = routeDelete(s[1], namespace, releaseName, logger)
+
+							if err == nil {
+								logger.Info("Successfully deleted Route " + namespace + "/" + s[1])
+							} else {
+								retryThisHelmDeployment = false
+								break
+							}
+						}
+					} else {
+						retryThisHelmDeployment = false
+						break
+					}
+				}
+				if !retryThisHelmDeployment {
+					break
+				}
+			} else {
+				break
+			}
+
+			logger.Info("Retrying to deploy"+releaseName, "remainingRetries", max_retries)
+			max_retries--
+		}
 
 		// VV: Uncomment to print the Manifest that Helm attempted to deploy (works even if chart is borked)
 		// logger.Info("Rendered " + recorded.Manifest)
@@ -479,6 +542,7 @@ func ConfigurationToHelmValues(
 		// RELEASE_NAMESPACED_UNMANAGED uses the imagesVariant value to populate the
 		// st4sd-runtime-service ConfigMap
 		values["imagesVariant"] = fmt.Sprintf(":bundle-%s", chart.AppVersion())
+		values["routePrefix"] = routePrefix
 	case RELEASE_NAMESPACED_MANAGED:
 		switchOn = append(switchOn,
 			"installWorkflowOperator", "installDatastore", "installRuntimeService",
