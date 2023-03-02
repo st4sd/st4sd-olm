@@ -21,6 +21,7 @@ package deploy
 
 import (
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"go.uber.org/zap/zapcore"
@@ -47,6 +48,27 @@ func TestDryRun(t *testing.T) {
 	err := HelmDeploySimulationToolkit(pathChart, &x, "vv-playground", true)
 	if err != nil {
 		t.Fatal("Unable to install/upgrade helm due to", err)
+	}
+}
+
+func TestRegeDiscoverUnpatchedObject(t *testing.T) {
+	r := regexp.MustCompile(PATTERN_FAILED_TO_PATCH)
+	msg := "unable to deploy release st4sd-namespaced-managed: cannot patch \"st4sd-authentication\" " +
+		"with kind Route: Route.route.openshift.io \"st4sd-authentication\" is invalid: spec.host: " +
+		"Invalid value: \"www.st4sd.ibm\": field is immutable"
+
+	s := r.FindStringSubmatch(msg)
+
+	if len(s) != 3 {
+		t.Fatalf("Expected exactly 3 groups but got %d: +%v", len(s), s)
+	}
+
+	if s[1] != "st4sd-authentication" {
+		t.Fatalf("Expected object st4sd-authentication but got \"%s\"", s[1])
+	}
+
+	if s[2] != "Route" {
+		t.Fatalf("Expected kind Route but got \"%s\"", s[2])
 	}
 }
 
