@@ -213,6 +213,28 @@ func routeDelete(routeName, namespace, releaseName string, logger logr.Logger) e
 	return err
 }
 
+// Merges 2 maps of key: value pairs overriding @a values with those in @b.
+// This is the algorithm that helm uses to merge multiple "values.yaml" files
+// VV: From https://github.com/helm/helm/blob/main/pkg/cli/values/options.go
+func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
+	out := make(map[string]interface{}, len(a))
+	for k, v := range a {
+		out[k] = v
+	}
+	for k, v := range b {
+		if v, ok := v.(map[string]interface{}); ok {
+			if bv, ok := out[k]; ok {
+				if bv, ok := bv.(map[string]interface{}); ok {
+					out[k] = MergeMaps(bv, v)
+					continue
+				}
+			}
+		}
+		out[k] = v
+	}
+	return out
+}
+
 func HelmDeployPart(
 	namespace, releaseName, helmChartPath string, dryRun bool,
 	configuration *st4sdv1alpha1.SimulationToolkitSpecSetup,
@@ -257,9 +279,9 @@ func HelmDeployPart(
 			// Do not want a user that has permissions to edit the values of the release to end up
 			// giving themselves more privileges using this operator as a proxy to edit the cluster-scoped objects.
 			// Therefore, THIS release will ALWAYS use whatever are the defaults in the helm chart.
-			// All other releases, can "ReuseValues" i.e. use w/e the helm-release values are.
+			// All other releases, can use w/e the helm-release values are.
 
-			client.ReuseValues = true
+			values = MergeMaps(release.Config, values)
 		}
 		client.MaxHistory = 2
 
@@ -268,8 +290,9 @@ func HelmDeployPart(
 		for max_retries >= 0 {
 			release, err = client.Run(releaseName, chart, values)
 
+			msg := ""
 			if err != nil {
-				msg := err.Error()
+				msg = err.Error()
 
 				r := regexp.MustCompile(PATTERN_FAILED_TO_PATCH)
 				// VV: allPatchProblems has the format [match index][0: entire matched string, 1: Object, 2: Kind]
@@ -303,7 +326,7 @@ func HelmDeployPart(
 				break
 			}
 
-			logger.Info("Retrying to deploy"+releaseName, "remainingRetries", max_retries)
+			logger.Info("Retrying to deploy "+releaseName, "remainingRetries", max_retries, "errorMessage", msg)
 			max_retries--
 		}
 
@@ -499,7 +522,6 @@ func ConfigurationToHelmValues(
 		"clusterRouteDomain":           clusterRouteDomain,
 		"datastoreLabelGateway":        datastoreIdentifier,
 
-		"installGithubSecretOAuth":                    false,
 		"installImagePullSecretWorkflowStack":         false,
 		"installImagePullSecretContribApplications":   false,
 		"installImagePullSecretCommunityApplications": false,
@@ -524,7 +546,7 @@ func ConfigurationToHelmValues(
 			"installWorkflowOperator", "installDatastore", "installRuntimeService",
 			"installRegistryBackend", "installRegistryUI", "installAuthentication",
 			"installRBACNamespaced", "installDeployer",
-			"installGithubSecretOAuth")
+		)
 	case RELEASE_NAMESPACED_UNMANAGED:
 		switchOn = append(switchOn,
 			"installDatastoreSecretMongoDB", "installRuntimeServiceConfigMap",
@@ -535,7 +557,6 @@ func ConfigurationToHelmValues(
 			"installWorkflowOperator", "installDatastore", "installRuntimeService",
 			"installRegistryBackend", "installRegistryUI", "installAuthentication",
 			"installRBACNamespaced", "installDeployer",
-			"installGithubSecretOAuth",
 		)
 		// VV: st4sd-deployment pushes 2 sets of images for each release:
 		// :platform-release-latest and :bundle-${HELM_CHART_VERSION}
@@ -553,7 +574,6 @@ func ConfigurationToHelmValues(
 			"installRBACClusterScoped",
 			"installDatastoreSecretMongoDB", "installRuntimeServiceConfigMap",
 			"installRegistryBackendConfigMap", "installRegistryUINginxConfigMap", "installDeployer",
-			"installGithubSecretOAuth",
 		)
 		// RELEASE_NAMESPACED_UNMANAGED uses the imagesVariant value to populate the
 		// DeploymentConfig objects

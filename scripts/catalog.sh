@@ -41,22 +41,7 @@ echo "Will include following bundles in catalog: ${all_bundles}"
 
 set -xe
 
-rm -f bundle/manifests/*.yaml
-# VV: Put together the new bundle. It upgrades ${OLD_VERSION} to ${VERSION}
-mkdir -p bundle/manifests
-
-# VV: Ensure CRD is up-to-date
-make manifests
-
-cp config/crd/bases/deploy.st4sd.ibm.com_simulationtoolkits.yaml \
-   bundle/manifests/
-
-sed -e "s#quay.io/st4sd/official-base/st4sd-olm:v%%VERSION%%#${img_operator}#g" \
-           -e "s#%%VERSION%%#${VERSION}#g" \
-    config/manifests/st4sd-olm.clusterserviceversion.yaml >bundle/manifests/st4sd-olm.clusterserviceversion.yaml
-
-# VV: This builds and pushes bundle-${VERSION}
-make bundle-build
+./scripts/generate-bundle.sh ${img_operator} ${VERSION}
 make bundle-push
 
 # VV: IIRC there was a race condition where pulling the image right after I pushed it

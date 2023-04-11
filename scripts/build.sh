@@ -7,6 +7,11 @@ dirScripts=`dirname "${0}"`
 cd "${dirScripts}/.."
 source scripts/constants.sh
 
+if [[ ! -z ${OVERRIDE_VERSION} ]]; then
+  echo "Overriding version to ${OVERRIDE_VERSION}"
+  export VERSION=${OVERRIDE_VERSION}
+fi
+
 export IMAGE_TAG_BASE=${IMAGE_TAG_BASE:-"quay.io/st4sd/official-base/st4sd-olm"}
 
 make docker-build
