@@ -108,3 +108,18 @@ If you have already installed ST4SD using the [st4sd-deployment instructions](ht
     - If you are using an OpenShift cluster on IBM Cloud, `st4sd-olm` can auto-detect your cluster ingress. 
       You can use `${CLUSTER_INGRESS}` to reference it in your `spec.setup.routeDomain` field (see example). 
 3. Create the [basic.yaml](examples/basic.yaml) YAML file (e.g. `oc apply -f examples/basic.yaml`).
+
+## References
+
+If you use ST4SD in your projects, please consider citing the following:
+
+```bibtex
+@software{st4sd_2022,
+author = {Johnston, Michael A. and Vassiliadis, Vassilis and Pomponio, Alessandro and Pyzer-Knapp, Edward},
+license = {Apache-2.0},
+month = {12},
+title = {{Simulation Toolkit for Scientific Discovery}},
+url = {https://github.com/st4sd/st4sd-runtime-core},
+year = {2022}
+}
+```
