@@ -121,7 +121,7 @@ type SimulationToolkitStatus struct {
 // +kubebuilder:resource:path=simulationtoolkits,shortName=st4sd
 // +kubebuilder:printcolumn:name="age",type="string",JSONPath=".metadata.creationTimestamp",description="Age of the workflow instance"
 // +kubebuilder:printcolumn:name="status",type="string",JSONPath=".status.phase",description="Latest status of deployment"
-// +kubebuilder:printcolumn:name="versionID",type="string",JSONPath=".status.versionID",description="VersionID consists of the a / separated array of strings. The strings are (in this order)st4sd-odlm-deploy (this operator) version, Helm Chart version, ST4SD version."
+// +kubebuilder:printcolumn:name="versionID",type="string",JSONPath=".status.versionID",description="VersionID consists of a separated by '/' array of strings. The strings are (in this order) st4sd-olm-deploy (this operator) version, Helm Chart version, ST4SD version."
 // SimulationToolkit contains setup instructions to deploy the Simulation Toolkit for Scientific Discovery
 // (ST4SD).
 type SimulationToolkit struct {

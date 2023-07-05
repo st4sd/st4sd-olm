@@ -53,3 +53,6 @@ sed -e "s#quay.io/st4sd/official-base/st4sd-olm:v%%VERSION%%#${img_operator}#g" 
 
 # VV: This builds st4sd-olm-bundle:${VERSION}
 make bundle-build
+
+rm -rf bundles/v${VERSION}
+cp -r  bundle bundles/v${VERSION}
