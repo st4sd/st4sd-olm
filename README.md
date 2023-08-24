@@ -101,7 +101,7 @@ will be able to install ST4SD using `st4sd-olm` in **this** namespace.
 ### Deploy ST4SD Cloud using the operator
 
 1. Create the 3 PVCs following the [st4sd-deployment instructions](https://github.com/st4sd/st4sd-deployment/blob/main/docs/install-requirements.md#storage-setup). In short create 1 PVC for each of the 3 fields in the [basic.yaml](examples/basic.yaml):
-   - `spec.setup.pvcInstances`: The PersistentVolumeClaim (PVC) (e.g. `workflow-instances-pvc`) should support mounting 
+   - `spec.setup.pvcInstances`: The PersistentVolumeClaim (PVC) (e.g. `workflow-instances`) should support mounting 
      under multiple pods in Read/Write, filesystem mode (i.e. ReadWriteMany). ST4SD stores the outputs of components on this PVC.
    - `spec.setup.pvcDatastore`: This PVC (e.g. `datastore-mongodb`) should support mounting on multiple pods in Read/Write, 
      filesystem mode (i.e. ReadWriteMany). The ST4SD Datastore uses this PVC to store its MongoDB database.

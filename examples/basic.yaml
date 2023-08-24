@@ -14,6 +14,6 @@ spec:
 
     # Make sure that these PersistentVolumeClaim (PVC) objects exist in the same namespace
     # See the README.md instructions for more information.
-    pvcInstances: workflow-instances-pvc
+    pvcInstances: workflow-instances
     pvcDatastore: datastore-mongodb
     pvcRuntimeService: runtime-service
