@@ -2,7 +2,7 @@ kind: SimulationToolkit
 apiVersion: deploy.st4sd.ibm.com/v1alpha1
 metadata:
   name: my-st4sd
-  namespace: my-namespace
+  # namespace: my-namespace
 spec:
   setup:
     # If running on OpenShift, ${CLUSTER_INGRESS} expands to the ingress of the cluster
@@ -14,6 +14,6 @@ spec:
 
     # Make sure that these PersistentVolumeClaim (PVC) objects exist in the same namespace
     # See the README.md instructions for more information.
-    pvcDatastore: datastore-mongodb
     pvcInstances: workflow-instances-pvc
+    pvcDatastore: datastore-mongodb
     pvcRuntimeService: runtime-service

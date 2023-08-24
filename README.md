@@ -31,11 +31,10 @@ writing and running virtual-experiments, along with much more.
 
 ## Installation
 
-You can install ST4SD by first installing this operator in your cluster and then asking it to deploy ST4SD under a namespace in your cluster.
+You can install ST4SD by first installing this operator in your cluster, configuring it, and then asking it to deploy [ST4SD Cloud](https://st4sd.github.io/overview/st4sd-cloud-getting-started) under a namespace in your cluster.
 
-### Install st4sd-olm (this OLM operator) in your cluster
 
-Requirements:
+### Requirements:
 
 1. **Access to an OpenShift cluster with `cluster-admin` permissions**
     - Required for creation of a kubernetes objects (such as CustomResourceDefinition and Role Based Access Control (RBAC)).
@@ -44,70 +43,76 @@ Requirements:
     - Install stable version of`oc` from <https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/>
     - It is good practice to periodically update your `oc` command line utility to ensure that your `oc` binary contains the latest patches and bug-fixes.
 
-Steps:
+Before you continue any further, ensure that you have logged in your OpenShift cluster using the `oc` command-line interface.
 
-1. Clone the repository, and cd into the `st4sd-olm` directory.
-2. Login to your OpenShift web console. Also log in on a terminal to your OpenShift cluster using the `oc` command-line interface.
-3. In your terminal, use oc to apply the [`deploy.yaml`](examples/deploy.yaml) objects (e.g. `oc apply -f examples/deploy.yaml`)
-4. You should see a new pod named `st4sd-catalog-XXXX` in the namespace `openshift-marketplace`.
-5. Wait for the pod to transition to the `Running` state and then wait for 30 more seconds.
-6. Switch back to the OpenShift Web Console page on your browser. Make sure you are in the `Administrator` view. 
-7. On the left panel, expand the menu `Operators`, and then click the `OperatorHub` option.
-8. Wait for the panel on the right to refresh.
-9. In the search box type `ST4SD`. The right panel should filter out unrelated entries and display one with the label 
-   `Simulation Toolkit For Scientific Discovery (ST4SD)`. 
-   If you do not see the ST4SD operator this means that OpenShift is still decoding the information from step 3 - 
-   wait for 30 seconds and repeat steps 8 and 9.
-10. Click on the `Simulation Toolkit For Scientific Discovery (ST4SD)` entry and wait for a new panel to pop up. 
+### Install the operator
+
+Add the **Simulation Toolkit for Scientific Discovery (ST4SD)** operator to the Operator Catalog of your OpenShift cluster:
+
+```
+oc apply -f https://raw.githubusercontent.com/st4sd/st4sd-olm/main/examples/deploy.yaml
+```
+
+Then wait for the pod `st4sd-catalog-xxxx` in the namespace `openshift-marketplace` to transition to the `Running` state.
+
+
+### Configure the operator
+
+Navigate to the OperatorHub in the OpenShift Web Console of your OpenShift cluster and install the operator `Simulation Toolkit for Scientific Discovery (ST4SD)` in the `openshift-operators` namespace.
+
+<details>
+
+<summary>Expand to see step-by-step instructions</summary> 
+
+1. Switch back to the OpenShift Web Console page on your browser. Make sure you are in the `Administrator` view. 
+2. On the left panel, expand the menu `Operators`, and then click the `OperatorHub` option.
+3. In the search box type `ST4SD`. The right panel should filter out unrelated entries and display one with the label 
+   `Simulation Toolkit For Scientific Discovery (ST4SD)`.
+4. Click on the `Simulation Toolkit For Scientific Discovery (ST4SD)` entry and wait for a new panel to pop up. 
     Click the `Install` button at the top left of this panel - you will transition to a new page.
     If the button label is `Uninstall`, then the operator is already installed on your cluster. 
-    In this case, you do not need to re-install the operator - skip to step 13.
-11. In the new page, select the `stable` update channel. Set the `Installed Namespace` dropdown to `openshift-operators`. 
+    In this case, you do not need to re-install the operator, you may skip to the last step.
+5. In the new page, select the `stable` update channel. Set the `Installed Namespace` dropdown to `openshift-operators`. 
     Set `Update approval` to `Automatic` if you wish that ST4SD deployments you create via this operator to be auto-updated. 
     Set it to `Manual` if you wish to manually update this operator and therefore control when you receive new updates to 
     your ST4SD instance. We recommend using the option `Automatic`. Finally, click the `Install` button at the bottom left
-    - you will transition to a new page.
-12. The page reports the installation status of the operator. Wait for it to become `Installed operator - ready for use`.
-13. Verify that the `st4sd-olm` operator pod is up and running. You should see it in the namespace that you deployed the
+    - you will transition to a new page. The page reports the installation status of the operator. Wait for it to become `Installed operator - ready for use`.
+6. Verify that the `st4sd-olm` operator pod is up and running. You should see it in the namespace that you deployed the
     operator in Step 11 (e.g. `openshift-operators`).
 
-If you followed the steps above you are now able to install ST4SD in any namespace on your cluster using the 
+</details>
+
+<br>
+
+If you followed the above, and you are a cluster-admin, you are now able to install ST4SD in any namespace on your cluster using the 
 `st4sd-olm` operator (this repository). You can enable other users of your Cluster to install `st4sd` in their own
 namespaces by granting them  Role-Based Access Control (RBAC) privileges to handle 
-`simulationtoolkits.deploy.st4sd.ibm.com` objects in their namespaces. 
+`simulationtoolkits.deploy.st4sd.ibm.com` objects in their namespaces. You can find more information about this [in our documentation website](https://st4sd.github.io/overview/cloud-manage-users).
+
+
 See [example-role.yaml](examples/example-role.yaml) for an example `Role` object you can use (with a RoleBinding) to 
 give users permissions to deploy ST4SD in a namespace. 
 
-**Note**: Update the `metadata.namespace` field in [example-role.yaml](examples/example-role.yaml) to the name of 
+> **Note**: Update the `metadata.namespace` field in [example-role.yaml](examples/example-role.yaml) to the name of 
 the namespace that you wish for users to deploy ST4Sd to. Then `oc apply -f examples/example-role.yaml`. Now, you can 
 create a RoleBinding object in the same namespace and use the RoleBinding to map users to this new Role. These users
 will be able to install ST4SD using `st4sd-olm` in **this** namespace.
 
-### Install ST4SD using st4sd-olm
+### Deploy ST4SD Cloud using the operator
 
-The steps below assume that you:
-
-1. have already installed `st4sd-olm` on your cluster using the instructions above
-2. have already used `oc` to login to your cluster
-3. have Role-Based Access Control (RBAC) permissions to create/modify objects of type `simulationtoolkits.deploy.st4sd.ibm.com` 
-   in the namespace that you wish to deploy ST4SD. See above instructions for more information.
-    
-
-Steps to install ST4SD in your namespace using `st4sd-olm`:
-
-If you have already installed ST4SD using the [st4sd-deployment instructions](https://github.com/st4sd/st4sd-deployment/blob/main/docs/install-requirements.md#storage-setup) then inspect the `deployment-options.yaml` file you created for ST4SD. Re-use the PersistentVolumeClaim (PVC) objects and `routePrefix` you selected when you deployed ST4SD manually. The st4sd-olm operator will import your existing deployment and keep it up to date in the future.
-
-1. Create the 3 PVCs following the [st4sd-deployment instructions](https://github.com/st4sd/st4sd-deployment/blob/main/docs/install-requirements.md#storage-setup).
-   - The PersistentVolumeClaim (PVC) object you create for the field `spec.setup.pvcInstances` should support mounting 
-     under multiple pods in Read/Write, filesystem mode (i.e. ReadWriteMany).
-   - The PVC you create for the field `pvcDatastore` should support mounting under multiple pods in Read/Write, 
-     filesystem mode (i.e. ReadWriteMany).
-   - The PVC you create for the field `pvcRuntimeService` should support mounting under multiple pods in Read/Write, 
-     filesystem mode (i.e. ReadWriteMany).
-2. Modify the [basic.yaml](examples/basic.yaml) YAML file to add the names of the PVCs and the desired RouteDomain of your ST4SD instance
+1. Create the 3 PVCs following the [st4sd-deployment instructions](https://github.com/st4sd/st4sd-deployment/blob/main/docs/install-requirements.md#storage-setup). In short create 1 PVC for each of the 3 fields in the [basic.yaml](examples/basic.yaml):
+   - `spec.setup.pvcInstances`: The PersistentVolumeClaim (PVC) (e.g. `workflow-instances-pvc`) should support mounting 
+     under multiple pods in Read/Write, filesystem mode (i.e. ReadWriteMany). ST4SD stores the outputs of components on this PVC.
+   - `spec.setup.pvcDatastore`: This PVC (e.g. `datastore-mongodb`) should support mounting on multiple pods in Read/Write, 
+     filesystem mode (i.e. ReadWriteMany). The ST4SD Datastore uses this PVC to store its MongoDB database.
+   - `spec.setup.pvcRuntimeService`: This PVC (e.g. `runtime-service`) should support mounting under multiple pods in Read/Write, 
+     filesystem mode (i.e. ReadWriteMany). The ST4SD Runtime Service uses this PVC to store the metadata of virtual experiments of your ST4SD Registry.
+2. Modify the [basic.yaml](examples/basic.yaml) YAML file to modify the names of the PVCs (unless you used the ones we suggested above) and the desired RouteDomain of your ST4SD instance
     - If you are using an OpenShift cluster on IBM Cloud, `st4sd-olm` can auto-detect your cluster ingress. 
       You can use `${CLUSTER_INGRESS}` to reference it in your `spec.setup.routeDomain` field (see example). 
 3. Create the [basic.yaml](examples/basic.yaml) YAML file (e.g. `oc apply -f examples/basic.yaml`).
+
+> **Note**: If you have already installed ST4SD Cloud manually using the [st4sd-deployment instructions](https://github.com/st4sd/st4sd-deployment/blob/main/docs/install-requirements.md#storage-setup) then inspect the `deployment-options.yaml` file you created for ST4SD. You can re-use the PersistentVolumeClaim (PVC) objects and `routePrefix` you selected when you deployed ST4SD manually. The st4sd-olm operator will import your existing deployment and automatically keep it up to date.
 
 ## References
 
