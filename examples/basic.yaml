@@ -17,3 +17,7 @@ spec:
     pvcInstances: workflow-instances
     pvcDatastore: datastore-mongodb
     pvcRuntimeService: runtime-service
+
+    # Optional
+    # secretS3InternalExperiments: name of the Secret object with the S3 bucket info
+    # secretS3GraphLibrary: name of the Secret object with the S3 bucket info

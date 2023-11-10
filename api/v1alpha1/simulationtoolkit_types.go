@@ -77,6 +77,25 @@ type SimulationToolkitSpecSetup struct {
 	// If empty, the operator will auto-generate the credentials of the MongoDB admin and store
 	// them in a new Kubernetes secret.
 	SecretDSMongoUserPass string `json:"secretDSMongoUserPass,omitempty"`
+
+	// (Optional) Name of Secret that contains the keys
+	// ENDPOINT (required), BUCKET (required), S3_ACCESS_KEY_ID (optional),
+	// S3_SECRET_ACCESS_KEY (optional),  S3_REGION (optional).
+	// When set configures the st4sd-runtime-service to switch on its Internal Experiment feature
+	// which in turn enables users of the st4sd-registry-ui web-app to create workflows
+	// in an interactive canvas. The st4sd-runtime-service will store the DSL 2.0 workflow definitions
+	// in the referenced S3 bucket with the prefix "experiments/".
+	SecretS3InternalExperiments string `json:"secretS3InternalExperiments,omitempty"`
+
+	// (Optional) Name of Secret that contains the keys
+	// ENDPOINT (required), BUCKET (required), S3_ACCESS_KEY_ID (optional),
+	// S3_SECRET_ACCESS_KEY (optional),  S3_REGION (optional).
+	// When set configures the st4sd-runtime-service to switch on its Graph Library feature
+	// which in turn enables users of the st4sd-registry-ui web-app to use Graph templates
+	// that are stored in the Graph Library when creating workflows in an interactive canvas.
+	// The st4sd-runtime-service will store the Graph templates in the referenced S3 bucket
+	// with the prefix "library/".
+	SecretS3GraphLibrary string `json:"secretS3GraphLibrary,omitempty"`
 }
 
 // SimulationToolkitSpec defines the desired state of SimulationToolkit
@@ -90,6 +109,16 @@ type SimulationToolkitSpec struct {
 	Paused bool `json:"paused,omitempty"`
 }
 
+type SimulationToolkitVersion struct {
+	// VersionID consists of the a / separated array of strings. The strings are (in this order)
+	//  st4sd-olm (this operator) version, Helm Chart (in st4sd-deployment) version,
+	//  ST4SD-Cloud version (library version in helm chart).
+	VersionID string `json:"versionID,omitempty"`
+
+	// The version of ST4SD-Cloud (i.e. the library version in the st4sd-deployment helm-chart)
+	VersionST4SDCloud string `json:"versionST4SDCloud,omitempty"`
+}
+
 type SimulationToolkitStatusCondition struct {
 	// The last time the condition transitioned from one status to another.
 	LastTransitionTime metav1.Time `json:"lastTransitionTime,omitempty"`
@@ -101,19 +130,18 @@ type SimulationToolkitStatusCondition struct {
 	Reason string `json:"reason,omitempty"`
 	// Status of the condition, one of Paused, Updating, Failed, Successful, Unknown
 	Status string `json:"status,omitempty"`
-	// VersionID consists of the a / separated array of strings. The strings are (in this order)
-	//  st4sd-olm (this operator) version, Helm Chart version, ST4SD version.
-	VersionID string `json:"versionID,omitempty"`
+
+	SimulationToolkitVersion `json:",inline"`
 }
 
 // SimulationToolkitStatus defines the observed state of SimulationToolkit
 type SimulationToolkitStatus struct {
-	// VersionID consists of the a / separated array of strings. The strings are (in this order)
-	// st4sd-olm (this operator) version, Helm Chart version, ST4SD version.
-	VersionID string `json:"versionID,omitempty"`
+
 	// Status of the condition, one of Paused, Updating, Failed, Successful, Unknown or empty (i.e. Unknown)
 	Phase      string                             `json:"phase,omitempty"`
 	Conditions []SimulationToolkitStatusCondition `json:"conditions,omitempty"`
+
+	SimulationToolkitVersion `json:",inline"`
 }
 
 // +kubebuilder:object:root=true
@@ -122,6 +150,7 @@ type SimulationToolkitStatus struct {
 // +kubebuilder:printcolumn:name="age",type="string",JSONPath=".metadata.creationTimestamp",description="Age of the workflow instance"
 // +kubebuilder:printcolumn:name="status",type="string",JSONPath=".status.phase",description="Latest status of deployment"
 // +kubebuilder:printcolumn:name="versionID",type="string",JSONPath=".status.versionID",description="VersionID consists of a separated by '/' array of strings. The strings are (in this order) st4sd-olm-deploy (this operator) version, Helm Chart version, ST4SD version."
+// +kubebuilder:printcolumn:name="versionST4SDCloud",type="string",JSONPath=".status.versionST4SDCloud",description="The version of ST4SD-Cloud"
 // SimulationToolkit contains setup instructions to deploy the Simulation Toolkit for Scientific Discovery
 // (ST4SD).
 type SimulationToolkit struct {

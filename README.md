@@ -107,7 +107,23 @@ will be able to install ST4SD using `st4sd-olm` in **this** namespace.
      filesystem mode (i.e. ReadWriteMany). The ST4SD Datastore uses this PVC to store its MongoDB database.
    - `spec.setup.pvcRuntimeService`: This PVC (e.g. `runtime-service`) should support mounting under multiple pods in Read/Write, 
      filesystem mode (i.e. ReadWriteMany). The ST4SD Runtime Service uses this PVC to store the metadata of virtual experiments of your ST4SD Registry.
-2. Modify the [basic.yaml](examples/basic.yaml) YAML file to modify the names of the PVCs (unless you used the ones we suggested above) and the desired RouteDomain of your ST4SD instance
+2. (Optional) Configure the Internal Experiments feature of st4sd-runtime-service which enables users of the st4sd-registry-ui WebApp to build experiments using an interactive Canvas. To enable this feature create S3 bucket and then create a Kubernetes secret that contains the keys:
+    - ENDPOINT (required)
+    - BUCKET (required)
+    - S3_ACCESS_KEY_ID (optional)
+    - S3_SECRET_ACCESS_KEY (optional)
+    - S3_REGION (optional)
+	
+    The st4sd-runtime-service will store the DSL 2.0 workflow definitions in the referenced S3 bucket with the prefix `experiments/`.
+3. (Optional) Configure the Graph Library feature of st4sd-runtime-service which enables users of the st4sd-registry-ui WebApp to use Graph templates that are stored in a Graph Library when creating workflows in an interactive canvas. To enable this feature create S3 bucket and then create a Kubernetes secret that contains the keys:
+    - ENDPOINT (required)
+    - BUCKET (required)
+    - S3_ACCESS_KEY_ID (optional)
+    - S3_SECRET_ACCESS_KEY (optional)
+    - S3_REGION (optional)
+	
+    The st4sd-runtime-service will store the Graph Templates in the referenced S3 bucket with the prefix `library/`.
+4. Modify the [basic.yaml](examples/basic.yaml) YAML file to modify the names of the PVCs (unless you used the ones we suggested above) and the desired RouteDomain of your ST4SD instance
     - If you are using an OpenShift cluster on IBM Cloud, `st4sd-olm` can auto-detect your cluster ingress. 
       You can use `${CLUSTER_INGRESS}` to reference it in your `spec.setup.routeDomain` field (see example). 
 3. Create the [basic.yaml](examples/basic.yaml) YAML file (e.g. `oc apply -f examples/basic.yaml`).

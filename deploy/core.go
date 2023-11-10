@@ -515,12 +515,28 @@ func ConfigurationToHelmValues(
 	}
 	routePrefix := fields[0]
 
+	canvasBuild := (len(configuration.SecretS3InternalExperiments) > 0)
+
+	// VV: Assume that we're only deploying non-read-only versions of ST4SD-cloud
+	globalRegistry := false
+
 	values := map[string]interface{}{
 		"pvcForWorkflowInstances":      configuration.PVCInstances,
 		"pvcForDatastoreMongoDB":       configuration.PVCDatastore,
 		"pvcForRuntimeServiceMetadata": configuration.PVCRuntimeService,
 		"clusterRouteDomain":           clusterRouteDomain,
 		"datastoreLabelGateway":        datastoreIdentifier,
+
+		// VV: Feature gates for st4sd-runtime-service
+		"secretNameS3GraphLibrary":        configuration.SecretS3GraphLibrary,
+		"secretNameS3InternalExperiments": configuration.SecretS3InternalExperiments,
+
+		// VV: Feature gates for st4sd-registry-backend
+		"isGlobalRegistry":                  globalRegistry,
+		"backendEnableCanvas":               !globalRegistry,
+		"backendEnableBuildCanvas":          canvasBuild,
+		"backendEnableEditParameterisation": !globalRegistry,
+		"backendEnableRunExperiment":        !globalRegistry,
 
 		"installImagePullSecretWorkflowStack":         false,
 		"installImagePullSecretContribApplications":   false,

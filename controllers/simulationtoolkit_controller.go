@@ -109,7 +109,7 @@ func (r *SimulationToolkitReconciler) UpdateStatus(
 			if lastConditionTransition < c.LastUpdateTime.UnixMicro() {
 				lastConditionTransition = c.LastTransitionTime.UnixMicro()
 				obj.Status.Phase = key
-				obj.Status.VersionID = c.VersionID
+				obj.Status.SimulationToolkitVersion = c.SimulationToolkitVersion
 			}
 		}
 	}
@@ -127,8 +127,16 @@ func (r *SimulationToolkitReconciler) UpdateStatus(
 	return latest, err
 }
 
-func (r *SimulationToolkitReconciler) ExpectedVersion() string {
-	return strings.Join([]string{deployv1alpha1.OPERATOR_VERSION, r.HelmChartVersion, r.ToolkitVersion}, "/")
+func (r *SimulationToolkitReconciler) ExpectedVersion() deployv1alpha1.SimulationToolkitVersion {
+
+	versionID := strings.Join([]string{deployv1alpha1.OPERATOR_VERSION, r.HelmChartVersion, r.ToolkitVersion}, "/")
+
+	return deployv1alpha1.SimulationToolkitVersion{
+		VersionID: versionID,
+		// VersionST4SDOlm:       deployv1alpha1.OPERATOR_VERSION,
+		// VersionST4SDHelmChart: r.HelmChartVersion,
+		VersionST4SDCloud: r.ToolkitVersion,
+	}
 }
 
 // For more details, check Reconcile and its Result here:
@@ -191,7 +199,7 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 
 		if paused.VersionID == "" {
-			paused.VersionID = r.ExpectedVersion()
+			paused.SimulationToolkitVersion = r.ExpectedVersion()
 		}
 
 		obj.Status.Phase = deployv1alpha1.STATUS_PAUSED
@@ -205,12 +213,12 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 			updating.Status = deployv1alpha1.STATUS_UPDATING
 			updating.LastUpdateTime = v1.NewTime(time.Now())
 			updating.LastTransitionTime = updating.LastUpdateTime
-			updating.Message = message
+			updating.SimulationToolkitVersion = r.ExpectedVersion()
+			updating.Message = fmt.Sprint(message, ". ST4SD Cloud version is ", updating.VersionST4SDCloud)
 			updating.Reason = reason
 
-			updating.VersionID = r.ExpectedVersion()
 			obj.Status.Phase = deployv1alpha1.STATUS_UPDATING
-			obj.Status.VersionID = updating.VersionID
+			obj.Status.SimulationToolkitVersion = updating.SimulationToolkitVersion
 			allConditions[deployv1alpha1.STATUS_UPDATING] = updating
 		}
 
@@ -230,8 +238,8 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		hashLast := obj.ObjectMeta.Annotations[annotationLastConfigurationKey]
 		configurationChanged := hashCurrent != hashLast
 		configurationOld := now.Unix()-lastCondition.LastTransitionTime.Unix() > STALE_THRESHOLD_SECONDS
-		deploymentStale := r.ExpectedVersion() != lastCondition.VersionID
-		obj.Status.VersionID = r.ExpectedVersion()
+		deploymentStale := r.ExpectedVersion() != lastCondition.SimulationToolkitVersion
+		obj.Status.SimulationToolkitVersion = r.ExpectedVersion()
 
 		logger.Info(
 			"Handling new object", "name", obj.Name, "namespace", obj.Namespace, "lastCondition",
@@ -342,12 +350,14 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 					successful.Status = status
 					successful.LastUpdateTime = v1.NewTime(time.Now())
 					successful.LastTransitionTime = successful.LastUpdateTime
-					successful.Message = "Successfully deployed ST4SD, enjoy!"
+					successful.SimulationToolkitVersion = r.ExpectedVersion()
+
+					successful.Message = fmt.Sprint("Successfully deployed ST4SD Cloud ",
+						successful.VersionST4SDCloud, ", enjoy!")
 					successful.Reason = "Success"
 
-					successful.VersionID = r.ExpectedVersion()
 					obj.Status.Phase = deployv1alpha1.STATUS_SUCCESSFUL
-					obj.Status.VersionID = successful.VersionID
+					obj.Status.SimulationToolkitVersion = successful.SimulationToolkitVersion
 					allConditions[status] = successful
 				} else {
 					status := deployv1alpha1.STATUS_FAILED
@@ -356,13 +366,12 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 					failed.Status = status
 					failed.LastUpdateTime = v1.NewTime(time.Now())
 					failed.LastTransitionTime = failed.LastUpdateTime
-					failed.Message = fmt.Sprint("Failed to deploy ST4SD.", err)
+					failed.SimulationToolkitVersion = r.ExpectedVersion()
+					failed.Message = fmt.Sprint("Failed to deploy ST4SD Cloud ", failed.VersionST4SDCloud, ". ", err)
 					failed.Reason = "HelmDeploymentFailed"
 
-					failed.VersionID = r.ExpectedVersion()
-
 					obj.Status.Phase = deployv1alpha1.STATUS_FAILED
-					obj.Status.VersionID = failed.VersionID
+					obj.Status.SimulationToolkitVersion = failed.SimulationToolkitVersion
 
 					allConditions[status] = failed
 
