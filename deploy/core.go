@@ -516,6 +516,7 @@ func ConfigurationToHelmValues(
 	routePrefix := fields[0]
 
 	canvasBuild := (len(configuration.SecretS3InternalExperiments) > 0)
+	canvasView := true
 
 	// VV: Assume that we're only deploying non-read-only versions of ST4SD-cloud
 	globalRegistry := false
@@ -533,8 +534,9 @@ func ConfigurationToHelmValues(
 
 		// VV: Feature gates for st4sd-registry-backend
 		"isGlobalRegistry":                  globalRegistry,
-		"backendEnableCanvas":               !globalRegistry,
+		"backendEnableCanvas":               canvasView,
 		"backendEnableBuildCanvas":          canvasBuild,
+		"backendEnableEditExperiment":       canvasBuild,
 		"backendEnableEditParameterisation": !globalRegistry,
 		"backendEnableRunExperiment":        !globalRegistry,
 
