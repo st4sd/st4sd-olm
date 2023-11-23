@@ -516,6 +516,7 @@ func ConfigurationToHelmValues(
 	routePrefix := fields[0]
 
 	canvasBuild := (len(configuration.SecretS3InternalExperiments) > 0)
+	graphLibraryWrite := (len(configuration.SecretS3GraphLibrary) > 0)
 	canvasView := true
 
 	// VV: Assume that we're only deploying non-read-only versions of ST4SD-cloud
@@ -533,12 +534,13 @@ func ConfigurationToHelmValues(
 		"secretNameS3InternalExperiments": configuration.SecretS3InternalExperiments,
 
 		// VV: Feature gates for st4sd-registry-backend
-		"isGlobalRegistry":                  globalRegistry,
-		"backendEnableCanvas":               canvasView,
-		"backendEnableBuildCanvas":          canvasBuild,
-		"backendEnableEditExperiment":       canvasBuild,
-		"backendEnableEditParameterisation": !globalRegistry,
-		"backendEnableRunExperiment":        !globalRegistry,
+		"isGlobalRegistry":                          globalRegistry,
+		"backendEnableCanvas":                       canvasView,
+		"backendEnableBuildCanvas":                  canvasBuild,
+		"backendEnableEditExperiment":               canvasBuild,
+		"backendEnableEditParameterisation":         !globalRegistry,
+		"backendEnableRunExperiment":                !globalRegistry,
+		"backendEnableLocalGraphLibraryWriteAccess": graphLibraryWrite,
 
 		"installImagePullSecretWorkflowStack":         false,
 		"installImagePullSecretContribApplications":   false,
