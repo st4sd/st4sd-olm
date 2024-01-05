@@ -9,7 +9,7 @@ go:
 install: []
 
 stages:
-- name: branch-image
+- name: aux-branch-image
   if: branch != main AND tag is blank
 - name: image-push
   if: branch = main AND type != pull_request
