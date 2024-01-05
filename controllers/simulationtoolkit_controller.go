@@ -205,23 +205,6 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		obj.Status.Phase = deployv1alpha1.STATUS_PAUSED
 		allConditions[deployv1alpha1.STATUS_PAUSED] = paused
 	} else {
-		// VV: Here we know that we hope to install or update ST4SD
-
-		transitionToUpdating := func(message, reason string) {
-			updating := allConditions[deployv1alpha1.STATUS_UPDATING]
-
-			updating.Status = deployv1alpha1.STATUS_UPDATING
-			updating.LastUpdateTime = v1.NewTime(time.Now())
-			updating.LastTransitionTime = updating.LastUpdateTime
-			updating.SimulationToolkitVersion = r.ExpectedVersion()
-			updating.Message = fmt.Sprint(message, ". ST4SD Cloud version is ", updating.VersionST4SDCloud)
-			updating.Reason = reason
-
-			obj.Status.Phase = deployv1alpha1.STATUS_UPDATING
-			obj.Status.SimulationToolkitVersion = updating.SimulationToolkitVersion
-			allConditions[deployv1alpha1.STATUS_UPDATING] = updating
-		}
-
 		/* VV: State machine details:
 		Unknown => Updating
 		Updating => if update successful Successful, else Failed
@@ -240,6 +223,25 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		configurationOld := now.Unix()-lastCondition.LastTransitionTime.Unix() > STALE_THRESHOLD_SECONDS
 		deploymentStale := r.ExpectedVersion() != lastCondition.SimulationToolkitVersion
 		obj.Status.SimulationToolkitVersion = r.ExpectedVersion()
+
+		// VV: Here we know that we hope to install or update ST4SD
+
+		transitionToUpdating := func(message, reason string) {
+			updating := allConditions[deployv1alpha1.STATUS_UPDATING]
+
+			updating.Status = deployv1alpha1.STATUS_UPDATING
+			updating.LastUpdateTime = v1.NewTime(time.Now())
+			updating.LastTransitionTime = updating.LastUpdateTime
+			updating.SimulationToolkitVersion = r.ExpectedVersion()
+			updating.Message = fmt.Sprint(message, ". ST4SD Cloud version is ", updating.VersionST4SDCloud)
+			updating.Reason = reason
+
+			obj.Status.Phase = deployv1alpha1.STATUS_UPDATING
+			obj.Status.SimulationToolkitVersion = updating.SimulationToolkitVersion
+			allConditions[deployv1alpha1.STATUS_UPDATING] = updating
+
+			obj.ObjectMeta.Annotations[annotationLastConfigurationKey] = hashCurrent
+		}
 
 		logger.Info(
 			"Handling new object", "name", obj.Name, "namespace", obj.Namespace, "lastCondition",
@@ -275,16 +277,6 @@ func (r *SimulationToolkitReconciler) Reconcile(ctx context.Context, req ctrl.Re
 				addBackToQueue = true
 			}
 		case deployv1alpha1.STATUS_UPDATING:
-			obj.ObjectMeta.Annotations[annotationLastConfigurationKey] = hashCurrent
-
-			transitionToUpdating("Deploying ST4SD now", "Updating")
-
-			obj, err = r.UpdateStatus(ctx, obj, &patch, allConditions, true)
-			if err != nil {
-				logger.Error(err, "Could not update status")
-				return r.Requeue(err)
-			}
-
 			// VV: Right before we deploy this, check if `routeDomain` is unset. If so, try to discover it.
 			// If that fails, then we simply cannot deploy ST4SD here unless the user tells us which domain to use
 
