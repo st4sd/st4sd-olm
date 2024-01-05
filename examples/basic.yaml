@@ -19,5 +19,5 @@ spec:
     pvcRuntimeService: runtime-service
 
     # Optional
-    # secretS3InternalExperiments: name of the Secret object with the S3 bucket info
-    # secretS3GraphLibrary: name of the Secret object with the S3 bucket info
+    # secretS3InternalExperiments: name of the Secret object with the S3 bucket info for the Internal Experiments (switches on Build Canvas feature)
+    # secretS3GraphLibrary: name of the Secret object with the S3 bucket info for the Graph Library (enables Build Canvas to access and manage the Graph Library)
