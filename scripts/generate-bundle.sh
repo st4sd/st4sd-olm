@@ -24,7 +24,7 @@ dirScripts=`dirname "${0}"`
 cd "${dirScripts}/.."
 
 rm -rf bundle
-# VV: Put together the new bundle. It upgrades ${OLD_VERSION} to ${VERSION}
+# VV: Put together the new bundle. It installs/upgrades to ${VERSION}
 mkdir -p bundle/manifests
 mkdir -p bundle/metadata
 
