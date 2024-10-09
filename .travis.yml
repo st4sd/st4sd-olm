@@ -4,7 +4,7 @@ services:
 - docker
 
 go:
-  - 1.19.x
+  - 1.21.x
 
 install: []
 
@@ -15,6 +15,9 @@ stages:
   if: branch = main AND type != pull_request
 - name: catalog-push
   if: tag is present
+
+env:
+  - BUILDKIT_PROGRESS=plain
 
 matrix:
   include:
@@ -27,6 +30,7 @@ matrix:
     - export IMAGE_TAG_BASE="${DOCKER_REGISTRY}${IMAGE_NAME}"
     - export IMAGE_PUSH=yes
     - export OVERRIDE_VERSION=${TRAVIS_BRANCH}
+    - go version
     - ./scripts/build.sh
   - stage: image-push
     install:
