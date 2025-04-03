@@ -1,6 +1,6 @@
 module github.com/st4sd/st4sd-olm
 
-go 1.19
+go 1.21
 
 require (
 	github.com/onsi/ginkgo/v2 v2.6.0

@@ -235,6 +235,55 @@ func MergeMaps(a, b map[string]interface{}) map[string]interface{} {
 	return out
 }
 
+// Injects default orchestrator arguments to the values for instantiating helm releases
+func EnsureProperDefaultOrchestratorArguments(values map[string]interface{}, logger logr.Logger) {
+
+	defaultOrchestratorArguments := make([]map[string]interface{}, 0)
+
+	if existingDefaultOrchestratorArguments, ok := values["defaultOrchestratorArguments"]; ok {
+		vals, ok := existingDefaultOrchestratorArguments.([]interface{})
+
+		if ok {
+			arguments := make(map[string]interface{})
+
+			for index, someCollection := range vals {
+				if collection, ok := someCollection.(map[string]interface{}); ok {
+					for k, v := range collection {
+						if k != "--registerWorkflow" {
+							arguments[k] = v
+						}
+					}
+				} else {
+					logger.Info(
+						"The collection of defaultOrchestratorArguments has existing values but their format is incompatible",
+						"someCollection", someCollection, "theType",
+						fmt.Sprintf("%T", someCollection),
+						"index", index,
+					)
+				}
+			}
+
+			if len(arguments) > 0 {
+				defaultOrchestratorArguments = append(defaultOrchestratorArguments, arguments)
+			}
+		} else {
+			logger.Info(
+				"The defaultOrchestratorArguments have existing values but their format is incompatible",
+				"defaultOrchestratorArguments", existingDefaultOrchestratorArguments, "theType",
+				fmt.Sprintf("%T", existingDefaultOrchestratorArguments),
+			)
+		}
+	}
+
+	arguments := make(map[string]interface{})
+	arguments["--registerWorkflow"] = "y"
+	defaultOrchestratorArguments = append(defaultOrchestratorArguments, arguments)
+
+	logger.Info("Updated defaultOrchestratorArguments", "new", defaultOrchestratorArguments, "old", values["defaultOrchestratorArguments"])
+
+	values["defaultOrchestratorArguments"] = defaultOrchestratorArguments
+}
+
 func HelmDeployPart(
 	namespace, releaseName, helmChartPath string, dryRun bool,
 	configuration *st4sdv1alpha1.SimulationToolkitSpecSetup,
@@ -282,6 +331,10 @@ func HelmDeployPart(
 			// All other releases, can use w/e the helm-release values are.
 
 			values = MergeMaps(release.Config, values)
+
+			if releaseName == RELEASE_NAMESPACED_UNMANAGED {
+				EnsureProperDefaultOrchestratorArguments(values, logger)
+			}
 		}
 		client.MaxHistory = 2
 
@@ -340,6 +393,11 @@ func HelmDeployPart(
 		client.DryRun = dryRun
 		client.Devel = true
 		client.ClientOnly = dryRun
+
+		if releaseName == RELEASE_NAMESPACED_UNMANAGED {
+			EnsureProperDefaultOrchestratorArguments(values, logger)
+		}
+
 		release, err = client.Run(chart, values)
 	}
 
