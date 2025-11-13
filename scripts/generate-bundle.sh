@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 img_operator=$1
-VERSION=$2
+export VERSION=$2
 
 echo_usage() {
     echo "Usage: $0 $${img_operator} $${VERSION}"
