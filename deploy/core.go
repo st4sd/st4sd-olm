@@ -561,8 +561,8 @@ func ConfigurationToHelmValues(
 	fields := strings.Split(configuration.RouteDomain, ".")
 
 	if len(fields) < 2 {
-		err := fmt.Errorf("Expected RouteDomain to be in the form " +
-			"of <datastoreIdentifier>.<domain>, but was " + configuration.RouteDomain)
+		err := fmt.Errorf("Expected RouteDomain to be in the form "+
+			"of <datastoreIdentifier>.<domain>, but was %s", configuration.RouteDomain)
 		return nil, err
 	}
 
