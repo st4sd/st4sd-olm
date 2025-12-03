@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM quay.io/projectquay/golang:1.25 as builder
+FROM mirror.gcr.io/golang:1.25-alpine as builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG VERSION=0.0.0-dev
@@ -27,17 +27,17 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} \
     go build -ldflags="-X 'github.com/st4sd/st4sd-olm/api/v1alpha1.OPERATOR_VERSION=$VERSION'" -a -o manager main.go
 
 RUN echo 'You can find the licenses of GPL packages in this container under \n\
-/usr/share/doc/${PACKAGE_NAME}/copyright \n\
-\n\
-If you would like the source to the GPL packages in this image then \n\
-send a request to this address, specifying the package you want and \n\
-the name and hash of this image: \n\
-\n\
-IBM Research Ireland,\n\
-IBM Technology Campus\n\
-Damastown Industrial Park\n\
-Mulhuddart Co. Dublin D15 HN66\n\
-Ireland\n' >/gpl-licenses
+    /usr/share/doc/${PACKAGE_NAME}/copyright \n\
+    \n\
+    If you would like the source to the GPL packages in this image then \n\
+    send a request to this address, specifying the package you want and \n\
+    the name and hash of this image: \n\
+    \n\
+    IBM Research Ireland,\n\
+    IBM Technology Campus\n\
+    Damastown Industrial Park\n\
+    Mulhuddart Co. Dublin D15 HN66\n\
+    Ireland\n' >/gpl-licenses
 
 
 # Use distroless as minimal base image to package the manager binary
