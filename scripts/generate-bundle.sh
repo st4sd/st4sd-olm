@@ -3,6 +3,7 @@
 img_operator=$1
 export VERSION=$2
 
+# Example: ./scripts/generate-bundle.sh "quay.io/st4sd/official-base/st4sd-olm:v2.5.4" 0.9.0
 echo_usage() {
     echo "Usage: $0 $${img_operator} $${VERSION}"
 }
