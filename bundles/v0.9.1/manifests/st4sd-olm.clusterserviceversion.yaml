@@ -1,0 +1,490 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    alm-examples: |-
+      [
+        {
+          "apiVersion": "deploy.st4sd.ibm.com/v1alpha1",
+          "kind": "SimulationToolkit",
+          "metadata": {
+            "labels": {
+              "app.kubernetes.io/created-by": "olm",
+              "app.kubernetes.io/instance": "example-st4sd-deploy",
+              "app.kubernetes.io/managed-by": "kustomize",
+              "app.kubernetes.io/name": "simulationtoolkit",
+              "app.kubernetes.io/part-of": "st4sd-olm"
+            },
+            "name": "example-st4sd-deploy"
+          },
+          "spec": {
+            "setup": {
+              "routeDomain": "my-st4sd.${CLUSTER_INGRESS}",
+              "datastoreIdentifier": "myST4SD",
+              "pvcDatastore": "datastore-mongodb",
+              "pvcInstances": "workflow-instances",
+              "pvcRuntimeService": "runtime-service"
+            }
+          }
+        }
+      ]
+    capabilities: Seamless Upgrades
+    createdAt: "2022-12-31T14:08:15Z"
+    operatorframework.io/suggested-namespace: openshift-operators
+    operators.operatorframework.io/builder: operator-sdk-v1.26.0
+    operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
+  name: st4sd-olm.v0.9.1
+  namespace: placeholder
+spec:
+  apiservicedefinitions: {}
+  customresourcedefinitions:
+    owned:
+    - description: SimulationToolkit contains setup instructions to deploy the Simulation
+          Toolkit for Scientific Discovery (ST4SD).
+      displayName: Simulation Toolkit
+      kind: SimulationToolkit
+      name: simulationtoolkits.deploy.st4sd.ibm.com
+      version: v1alpha1
+  description: The Simulation Toolkit for Scientific Discovery (ST4SD) simplifies
+    the development, execution and dissemination of virtual experiments by providing
+    powerful querying capabilities, robust and multi-environment execution support,
+    AI acceleration capabilities, and a global showcase.
+  displayName: Simulation Toolkit For Scientific Discovery (ST4SD)
+  icon:
+  - base64data: PD94bWwgdmVyc2lvbj0iMS4wIiBzdGFuZGFsb25lPSJubyI/Pgo8IURPQ1RZUEUgc3ZnIFBVQkxJQyAiLS8vVzNDLy9EVEQgU1ZHIDIwMDEwOTA0Ly9FTiIKICJodHRwOi8vd3d3LnczLm9yZy9UUi8yMDAxL1JFQy1TVkctMjAwMTA5MDQvRFREL3N2ZzEwLmR0ZCI+CjxzdmcgdmVyc2lvbj0iMS4wIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciCiB3aWR0aD0iMjY2Ny4wMDAwMDBwdCIgaGVpZ2h0PSIyMTI2LjAwMDAwMHB0IiB2aWV3Qm94PSIwIDAgMjY2Ny4wMDAwMDAgMjEyNi4wMDAwMDAiCiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJ4TWlkWU1pZCBtZWV0Ij4KPG1ldGFkYXRhPgpDcmVhdGVkIGJ5IHBvdHJhY2UgMS4xNiwgd3JpdHRlbiBieSBQZXRlciBTZWxpbmdlciAyMDAxLTIwMTkKPC9tZXRhZGF0YT4KPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoMC4wMDAwMDAsMjEyNi4wMDAwMDApIHNjYWxlKDAuMTAwMDAwLC0wLjEwMDAwMCkiCmZpbGw9IiMwMDAwMDAiIHN0cm9rZT0ibm9uZSI+CjxwYXRoIGQ9Ik0wIDEwNjMwIGwwIC0xMDYzMCAxMzMzNSAwIDEzMzM1IDAgMCAxMDYzMCAwIDEwNjMwIC0xMzMzNSAwIC0xMzMzNQowIDAgLTEwNjMweiBtMjAxODEgODg1OCBjNDQ0IC03MCA4MDAgLTE5MCAxMTUyIC0zODcgNDYzIC0yNTkgODUxIC02MTkgMTEzOQotMTA1OCAyNjYgLTQwNSA0MjMgLTgyNSA1MDUgLTEzNTAgMTYgLTEwMCAxOCAtNTgwIDIxIC02ODQzIDIgLTQ4NTIgMCAtNjc3MQotOCAtNjg2NCAtODEgLTk0NyAtNTkwIC0xODMwIC0xMzcwIC0yMzc3IC00NDcgLTMxMyAtOTI5IC00OTcgLTE0OTUgLTU3MQotMTQ4IC0xOSAtMTM1OTIgLTE5IC0xMzc0MCAwIC0zODkgNTEgLTcxNCAxNDcgLTEwNTAgMzEyIC0zNzQgMTgzIC02OTAgNDE3Ci05NjEgNzExIC00NTIgNDg5IC03MjIgMTA1MyAtODM2IDE3NDQgbC0yMyAxNDAgLTMgNjczNSBjLTIgNDc2OCAwIDY3NzIgOAo2ODYyIDQ1IDUzMSAyMjQgMTA0OSA1MTUgMTQ5MyA0NTIgNjkxIDExMzYgMTE4MSAxOTIyIDEzNzggMTU0IDM5IDM0MiA3MyA0NzgKODYgNTAgNCAzMTM3IDggNjg2NSA3IDYyODEgLTIgNjc4MyAtMyA2ODgxIC0xOHoiLz4KPHBhdGggZD0iTTU1MDAgMTc4NTMgYy02NjQgLTY4IC0xMDgzIC0zNjQgLTEyMjEgLTg2MyAtNTAgLTE4MyAtNTIgLTQ4MiAtNQotNjY1IDU4IC0yMjMgMTcyIC0zOTUgMzUxIC01MzAgMjM3IC0xNzggNDk5IC0yODIgMTAxMCAtNDAwIDMzMCAtNzcgNDQ2IC0xMDkKNTY0IC0xNTkgMjQ5IC0xMDUgMzgyIC0yNDAgNDM4IC00NDcgMjQgLTg4IDI0IC0zMTYgMCAtNDEzIC0zNyAtMTQ3IC0xMDUKLTI2NyAtMjEyIC0zNzEgLTg1IC04MyAtMTg3IC0xNDMgLTMxMCAtMTgzIC0xNDUgLTQ3IC0yMjAgLTU3IC00MzUgLTU2IC0yMTYKMCAtMzI3IDE3IC00ODEgNzQgLTIyMiA4MSAtNDY1IDI2MiAtNjM0IDQ3NCAtMzMgNDEgLTYzIDc1IC02NiA3NSAtNSAxIC02OAotNTAgLTI3NyAtMjI3IGwtMTIyIC0xMDQgNDAgLTUxIGMyMTQgLTI3MSA0OTIgLTQ4MiA3OTIgLTYwMSAzNzEgLTE0NyA5NjUKLTE2MCAxMzYzIC0zMSAxODMgNjAgMzg5IDE3NyA1MTcgMjk1IDE4OSAxNzMgMzIwIDQzNiAzNjUgNzMwIDE5IDEyNiAxMyAzODYKLTExIDQ5NSAtOTIgNDE1IC0zNDcgNjc1IC04MzEgODUwIC0xMzIgNDggLTI1OSA4MiAtNTgwIDE1NSAtMTQ4IDM0IC0zMjMgNzkKLTM4NyAxMDEgLTQzMiAxNDAgLTU5NyAzMjUgLTU5OCA2NjcgMCAyMjkgODMgNDE4IDIzMyA1MjkgMTc3IDEzMCAzNzggMTg1CjY3NyAxODQgMzExIDAgNTA4IC01NCA3MjUgLTE5NyA4NiAtNTcgMjU1IC0yMTMgMzI2IC0zMDIgbDM0IC00MyAxOTggMTQ1CmMxMDkgODAgMTk4IDE0OCAxOTggMTUzIC0xIDE2IC05NSAxMzUgLTE2OCAyMTMgLTI3NyAyOTQgLTYzMCA0NjAgLTEwNjggNTAwCi0xMDMgOSAtMzQ2IDExIC00MjUgM3oiLz4KPHBhdGggZD0iTTE2NTgwIDE3ODUzIGMtNjY0IC02OCAtMTA4MyAtMzY0IC0xMjIxIC04NjMgLTUwIC0xODMgLTUyIC00ODIgLTUKLTY2NSA1OCAtMjIzIDE3MiAtMzk1IDM1MSAtNTMwIDIzNyAtMTc4IDQ5OSAtMjgyIDEwMTAgLTQwMCAzMzAgLTc3IDQ0NiAtMTA5CjU2NCAtMTU5IDI0OSAtMTA1IDM4MiAtMjQwIDQzOCAtNDQ3IDI0IC04OCAyNCAtMzE2IDAgLTQxMyAtMzcgLTE0NyAtMTA1Ci0yNjcgLTIxMiAtMzcxIC04NSAtODMgLTE4NyAtMTQzIC0zMTAgLTE4MyAtMTQ1IC00NyAtMjIwIC01NyAtNDM1IC01NiAtMjE2CjAgLTMyNyAxNyAtNDgxIDc0IC0yMjIgODEgLTQ2NSAyNjIgLTYzNCA0NzQgLTMzIDQxIC02MyA3NSAtNjYgNzUgLTUgMSAtNjgKLTUwIC0yNzcgLTIyNyBsLTEyMiAtMTA0IDQwIC01MSBjMjE0IC0yNzEgNDkyIC00ODIgNzkyIC02MDEgMzcxIC0xNDcgOTY1Ci0xNjAgMTM2MyAtMzEgMTgzIDYwIDM4OSAxNzcgNTE3IDI5NSAxODkgMTczIDMyMCA0MzYgMzY1IDczMCAxOSAxMjYgMTMgMzg2Ci0xMSA0OTUgLTkyIDQxNSAtMzQ3IDY3NSAtODMxIDg1MCAtMTMyIDQ4IC0yNTkgODIgLTU4MCAxNTUgLTE0OCAzNCAtMzIzIDc5Ci0zODcgMTAxIC00MzIgMTQwIC01OTcgMzI1IC01OTggNjY3IDAgMjI5IDgzIDQxOCAyMzMgNTI5IDE3NyAxMzAgMzc4IDE4NQo2NzcgMTg0IDMxMSAwIDUwOCAtNTQgNzI1IC0xOTcgODYgLTU3IDI1NSAtMjEzIDMyNiAtMzAyIGwzNCAtNDMgMTk4IDE0NQpjMTA5IDgwIDE5OCAxNDggMTk4IDE1MyAtMSAxNiAtOTUgMTM1IC0xNjggMjEzIC0yNzcgMjk0IC02MzAgNDYwIC0xMDY4IDUwMAotMTAzIDkgLTM0NiAxMSAtNDI1IDN6Ii8+CjxwYXRoIGQ9Ik03NjUwIDE3NTQ1IGwwIC0yMzUgNzAwIDAgNzAwIDAgMCAtMTk3NSAwIC0xOTc1IDI3MCAwIDI3MCAwIDAgMTk3NQowIDE5NzUgNzAwIDAgNzAwIDAgMCAyMzUgMCAyMzUgLTE2NzAgMCAtMTY3MCAwIDAgLTIzNXoiLz4KPHBhdGggZD0iTTEyMjgyIDE2MjQyIGwtOTIyIC0xNTM4IDAgLTIzNyAwIC0yMzcgMTA2NSAwIDEwNjUgMCAwIC00MzUgMCAtNDM1CjI1NSAwIDI1NSAwIDAgNDM1IDAgNDM1IDMyMCAwIDMyMCAwIDAgMjI1IDAgMjI1IC0zMjAgMCAtMzIwIDAgMCAxNTUwIDAgMTU1MAotMzk4IDAgLTM5OCAwIC05MjIgLTE1Mzh6IG0xMjA4IC0yMTcgbDAgLTEzNDUgLTgxMCAwIGMtNjkxIDAgLTgxMCAyIC04MDMgMTQKMTk3IDM0MyAxNTkyIDI2NzYgMTYwMSAyNjc2IDkgMCAxMiAtMjc2IDEyIC0xMzQ1eiIvPgo8cGF0aCBkPSJNMTkxODAgMTU1NzAgbDAgLTIyMTAgNzkzIDAgYzk1OSAwIDEwNDYgNiAxMzIyIDk4IDY0OCAyMTQgMTAzNCA3NjAKMTE1MiAxNjMyIDIzIDE3MCAyNiA3NzYgNSA5MzAgLTY0IDQ2OCAtMTY3IDc3NSAtMzU4IDEwNjMgLTkxIDEzOCAtMjgyIDMyOQotNDIwIDQyMCAtMjEzIDE0MSAtNDY4IDIzMSAtNzU0IDI2NyAtNTMgNiAtMzk1IDEwIC05MTIgMTAgbC04MjggMCAwIC0yMjEwegptMTY3MCAxNzI1IGM2MDQgLTgxIDk5MSAtNTMzIDEwMzkgLTEyMTUgMTQgLTE4OSAxNCAtODM2IDAgLTEwMTQgLTQ4IC02NDEKLTM3NSAtMTA2NyAtOTE5IC0xMTk2IC0xMjggLTMwIC0zNjkgLTQxIC04MzUgLTM4IGwtNDIwIDMgLTMgMTczOCAtMiAxNzM3CjUxNyAwIGMzOTAgMCA1NDQgLTQgNjIzIC0xNXoiLz4KPHBhdGggZD0iTTk4MjAgOTg5NCBjLTQwIC0xNiAtNDAgLTExIC00MCAtNzUwIDAgLTYyMCAyIC03MTUgMTUgLTcyOCAzMCAtMjkKMTk1IC0zMyAyNDcgLTUgMTcgOSAxOCA0MyAxOCA3MzMgMCA2NjAgLTEgNzI1IC0xNyA3MzcgLTE3IDE0IC0xOTMgMjQgLTIyMwoxM3oiLz4KPHBhdGggZD0iTTE4NjgwIDk4OTQgYy00MCAtMTYgLTQwIC0xMSAtNDAgLTc1MCAwIC02MjAgMiAtNzE1IDE1IC03MjggMzAgLTI5CjE5NSAtMzMgMjQ3IC01IDE3IDkgMTggNDMgMTggNzMzIDAgNjYwIC0xIDcyNSAtMTcgNzM3IC0xNyAxNCAtMTkzIDI0IC0yMjMKMTN6Ii8+CjxwYXRoIGQ9Ik0xOTIyMCA5ODkzIGMtNDAgLTE0IC00MCAtMTAgLTQwIC03NDkgMCAtNjIwIDIgLTcxNSAxNSAtNzI4IDE5IC0xOQoxMTIgLTMwIDE3NyAtMjIgOTQgMTMgODcgLTcgOTAgMjc4IGwzIDI1MiAxNTkgLTI1MiBjODggLTEzOSAxNjkgLTI1OCAxODAKLTI2NSAxMyAtNyA2NCAtMTIgMTMyIC0xMiAxMjggMCAxNTAgOSAxNDAgNTkgLTMgMTYgLTc5IDE0MiAtMTY4IDI4MCAtODkgMTM4Ci0xNjIgMjU4IC0xNjIgMjY3IC0xIDEwIDU4IDgzIDEyOSAxNjUgNzIgODEgMTM4IDE1OSAxNDcgMTczIDI0IDM1IDIzIDc4IC0xCjkxIC0yNiAxMyAtMjE0IDEzIC0yNDQgLTEgLTE0IC02IC04OSAtOTggLTE2OCAtMjA1IGwtMTQ0IC0xOTQgLTUgNDIyIC01IDQyMgotMjUgMTMgYy0yNSAxMyAtMTgwIDE3IC0yMTAgNnoiLz4KPHBhdGggZD0iTTYzNTcgOTg1OSBjLTU3IC05IC04MiAtMjggLTk4IC03NyAtMTMgLTQxIC03IC0xMzAgMTIgLTE2MCAyMiAtMzYKNzIgLTQ3IDE4NiAtNDMgMzEgMSA1MSA5IDc0IDI5IDI3IDI0IDMyIDM2IDM2IDkzIDExIDEzMyAtNTQgMTgyIC0yMTAgMTU4eiIvPgo8cGF0aCBkPSJNMTIyMjcgOTg1OSBjLTU3IC05IC04MiAtMjggLTk4IC03NyAtMTMgLTQxIC03IC0xMzAgMTIgLTE2MCAyMiAtMzYKNzIgLTQ3IDE4NiAtNDMgMzEgMSA1MSA5IDc0IDI5IDI3IDI0IDMyIDM2IDM2IDkzIDExIDEzMyAtNTQgMTgyIC0yMTAgMTU4eiIvPgo8cGF0aCBkPSJNMjAzMjcgOTg1OSBjLTU3IC05IC04MiAtMjggLTk4IC03NyAtMTMgLTQxIC03IC0xMzAgMTIgLTE2MCAyMiAtMzYKNzIgLTQ3IDE4NiAtNDMgMzEgMSA1MSA5IDc0IDI5IDI3IDI0IDMyIDM2IDM2IDkzIDExIDEzMyAtNTQgMTgyIC0yMTAgMTU4eiIvPgo8cGF0aCBkPSJNNTUwOCA5ODA1IGMtMjAyIC01MCAtMzE4IC0xOTEgLTMxOCAtMzkwIDAgLTEzMCA0OSAtMjM0IDE0NSAtMzA3CjI3IC0yMCAxMjEgLTczIDIxMCAtMTE3IDE3OSAtODkgMjE4IC0xMjEgMjMwIC0xOTAgMTAgLTYwIC0yNSAtMTI4IC04NCAtMTYwCi05MyAtNTEgLTI1MSAtMzUgLTM4OSAzOSAtMTIxIDY2IC0xMzcgNTUgLTEzNiAtODcgMSAtOTAgMTYgLTExNCA5MiAtMTUxIDE1MAotNzUgMzc4IC04NiA1NDIgLTI1IDU0IDIwIDEzNyA3MiAxNjcgMTA0IDExMyAxMjMgMTQzIDMxOCA3MyA0NjcgLTQ5IDEwMwotMTM4IDE3MiAtMzM1IDI1OCAtMTU0IDY4IC0yMDkgMTE1IC0yMjAgMTkwIC0xMyA4OSA2MSAxNTQgMTc1IDE1NCA4MCAwIDEyMwotMTEgMjIyIC01NyA0MiAtMjAgODQgLTMzIDkyIC0zMCAzNCAxMyAzNCAxOTAgMCAyMjggLTYzIDcwIC0zMTUgMTEwIC00NjYgNzR6Ii8+CjxwYXRoIGQ9Ik0xMTQ4NCA5NjkxIGMtNTQgLTE0IC01NCAtMTUgLTU0IC0xMzcgbDAgLTExNCAtNjQgMCBjLTg0IDAgLTkxIC05Ci05MSAtMTE1IDAgLTEwNiA3IC0xMTUgOTAgLTExNSBsNjMgMCA0IC0zMTIgYzMgLTI3NSA2IC0zMTggMjIgLTM1MyAyOSAtNjUKNjQgLTEwNCAxMTkgLTEzMyA0OCAtMjUgNjEgLTI3IDE3MiAtMjcgOTcgMCAxMjcgNCAxNTggMTkgNDQgMjIgNTIgNDQgNTEgMTM5Ci0xIDkxIC0xMSAxMDIgLTgzIDgwIC00NCAtMTIgLTYxIC0xMyAtOTMgLTQgLTY2IDIwIC03MSA0NCAtNzYgMzM5IGwtNCAyNTIKMTEwIDAgYzg0IDAgMTE0IDQgMTI1IDE1IDMzIDMyIDI5IDE4NSAtNSAyMDYgLTcgNSAtNjEgOSAtMTIwIDkgbC0xMDggMCAwCjExNCBjMCA4NCAtNCAxMTYgLTE0IDEyNSAtMTcgMTQgLTE2MCAyMyAtMjAyIDEyeiIvPgo8cGF0aCBkPSJNMTU2NDQgOTY5MSBjLTU0IC0xNCAtNTQgLTE1IC01NCAtMTM3IGwwIC0xMTQgLTY0IDAgYy04NCAwIC05MSAtOQotOTEgLTExNSAwIC0xMDYgNyAtMTE1IDkwIC0xMTUgbDYzIDAgNCAtMzEyIGMzIC0yNzUgNiAtMzE4IDIyIC0zNTMgMjkgLTY1CjY0IC0xMDQgMTE5IC0xMzMgNDggLTI1IDYxIC0yNyAxNzIgLTI3IDk3IDAgMTI3IDQgMTU4IDE5IDQ0IDIyIDUyIDQ0IDUxIDEzOQotMSA5MSAtMTEgMTAyIC04MyA4MCAtNDQgLTEyIC02MSAtMTMgLTkzIC00IC02NiAyMCAtNzEgNDQgLTc2IDMzOSBsLTQgMjUyCjExMCAwIGM4NCAwIDExNCA0IDEyNSAxNSAzMyAzMiAyOSAxODUgLTUgMjA2IC03IDUgLTYxIDkgLTEyMCA5IGwtMTA4IDAgMAoxMTQgYzAgODQgLTQgMTE2IC0xNCAxMjUgLTE3IDE0IC0xNjAgMjMgLTIwMiAxMnoiLz4KPHBhdGggZD0iTTIwODc0IDk2OTEgYy01NCAtMTQgLTU0IC0xNSAtNTQgLTEzNyBsMCAtMTE0IC02NCAwIGMtODQgMCAtOTEgLTkKLTkxIC0xMTUgMCAtMTA2IDcgLTExNSA5MCAtMTE1IGw2MyAwIDQgLTMxMiBjMyAtMjc1IDYgLTMxOCAyMiAtMzUzIDI5IC02NQo2NCAtMTA0IDExOSAtMTMzIDQ4IC0yNSA2MSAtMjcgMTcyIC0yNyA5NyAwIDEyNyA0IDE1OCAxOSA0NCAyMiA1MiA0NCA1MSAxMzkKLTEgOTEgLTExIDEwMiAtODMgODAgLTQ0IC0xMiAtNjEgLTEzIC05MyAtNCAtNjYgMjAgLTcxIDQ0IC03NiAzMzkgbC00IDI1MgoxMTAgMCBjODQgMCAxMTQgNCAxMjUgMTUgMzMgMzIgMjkgMTg1IC01IDIwNiAtNyA1IC02MSA5IC0xMjAgOSBsLTEwOCAwIDAKMTE0IGMwIDg0IC00IDExNiAtMTQgMTI1IC0xNyAxNCAtMTYwIDIzIC0yMDIgMTJ6Ii8+CjxwYXRoIGQ9Ik03MjYzIDk0NDYgYy01NiAtMTggLTEwOCAtNTEgLTE2NSAtMTA1IGwtNDggLTQ0IDAgNjEgYzAgNzYgLTggODIKLTEyNCA4MiAtNjQgMCAtODggLTQgLTEwMCAtMTYgLTE0IC0xNCAtMTYgLTczIC0xNiAtNTA0IDAgLTQyMSAyIC00OTEgMTUKLTUwNCAxOSAtMTkgMTEyIC0zMCAxNzcgLTIyIDk2IDEzIDg4IC0xNyA4OCAzNTYgbDAgMzI5IDU0IDU2IGM4NCA4NiAxNTIgMTA1CjIxNyA2MiAxOSAtMTIgNDMgLTQwIDU0IC02MiAxOSAtMzcgMjAgLTYzIDIzIC0zNzcgNCAtMzgyIC00IC0zNTEgOTAgLTM2NCA2NQotOCAxNTggMyAxNzcgMjIgMTMgMTMgMTUgNjUgMTUgMzQwIGwwIDMyNSA0NiA0OSBjMTA5IDExNiAyMjQgMTE3IDI3NyAyIDIxCi00NSAyMiAtNjQgMjUgLTM3OSAzIC0yODcgNiAtMzM0IDE5IC0zNDUgMjMgLTE5IDIxNCAtMTggMjM2IDEgMTUgMTIgMTcgNTEKMTcgMzcxIDAgMjAwIC00IDM4MSAtMTAgNDExIC0yMSAxMTAgLTc5IDE5MSAtMTczIDI0MSAtMzUgMTkgLTU4IDIzIC0xNDIgMjMKLTEyNSAwIC0xNzAgLTE2IC0yNzMgLTk4IC01MSAtNDEgLTc3IC01NiAtODAgLTQ3IC0xMSAzMiAtODYgOTkgLTEzNSAxMjEgLTY0CjI4IC0yMDAgMzYgLTI2NCAxNXoiLz4KPHBhdGggZD0iTTEwNTQ4IDk0NDYgYy04OSAtMjAgLTE3NiAtNTYgLTIwOCAtODYgLTI3IC0yNiAtMzAgLTM0IC0zMCAtOTUgMAotMTE3IDIxIC0xMjkgMTI5IC04MCAxMTAgNDkgMTkzIDY4IDI3MCA2MiAxMDQgLTggMTUxIC02MSAxNTEgLTE2OSBsMCAtNTgKLTkyIDAgYy0xOTMgMCAtMzQ1IC00MSAtNDI2IC0xMTUgLTY1IC01OCAtODcgLTExNCAtODYgLTIxNSAxIC05NiAyMCAtMTUyIDczCi0yMTMgNjUgLTc0IDIwOCAtMTE0IDM0MiAtOTUgNjQgOCAxNjIgNTMgMTkzIDg3IDI2IDI4IDM2IDI2IDM2IC03IDAgLTU3IDE5Ci02NyAxMjAgLTY3IDgwIDAgOTQgMyAxMDcgMjAgMjIgMzAgMTMgNzQ2IC0xMCA4MjEgLTMyIDk5IC0xMDIgMTY5IC0yMDAgMjAwCi02OSAyMiAtMjkxIDI4IC0zNjkgMTB6IG0zMTIgLTY4NSBsMCAtNzkgLTM5IC0zNSBjLTQ5IC00NCAtNzUgLTU4IC0xMjYgLTY4Ci0xMDUgLTIwIC0xODYgNTQgLTE2NCAxNDkgMTcgNzcgODcgMTEwIDIzNyAxMTEgbDkyIDEgMCAtNzl6Ii8+CjxwYXRoIGQ9Ik0xMjk5MyA5NDQ2IGMtODMgLTIwIC0xNjQgLTY2IC0yMjQgLTEyNSAtOTkgLTEwMCAtMTQyIC0yMjYgLTE0MQotNDE2IDEgLTE5OSA0MSAtMzE0IDE0MCAtNDA3IDkzIC04NyAxODggLTExOSAzNTcgLTExOSAxMjUgLTEgMTg0IDExIDI3MSA1MwoxODkgOTEgMjg3IDMxOCAyNTUgNTkwIC0yOCAyNDAgLTEzNSAzNzYgLTMzMyA0MjMgLTc2IDE4IC0yNTIgMTggLTMyNSAxegptMjQyIC0yMjUgYzUwIC0yMyA3OCAtNTMgMTA3IC0xMTYgMjAgLTQ0IDIzIC02NSAyMyAtMTg1IDAgLTEzMCAtMSAtMTM3IC0zMAotMTk1IC00MCAtODAgLTkyIC0xMTcgLTE3NCAtMTIzIC0xNzYgLTEzIC0yNjUgMTE5IC0yNDggMzY3IDEwIDEzNyA2MyAyMjcKMTUyIDI1OSA0NyAxNyAxMjYgMTMgMTcwIC03eiIvPgo8cGF0aCBkPSJNMTQzMjUgOTQ0NyBjLTY2IC0yMiAtMTE4IC01MyAtMTczIC0xMDIgbC01MiAtNDcgMCA2MSBjMCA3NSAtOSA4MQotMTI0IDgxIC02NCAwIC04OCAtNCAtMTAwIC0xNiAtMTQgLTE0IC0xNiAtNzMgLTE2IC01MDQgMCAtNDIxIDIgLTQ5MSAxNQotNTA0IDE5IC0xOSAxMTIgLTMwIDE3NyAtMjIgOTYgMTMgODggLTE3IDg4IDM1NSBsMCAzMjkgNTUgNTUgYzExNSAxMTUgMjMwCjExNCAyODcgLTEgMjIgLTQ2IDIzIC01NiAyNiAtMzc5IDMgLTI4OCA2IC0zMzMgMTkgLTM0NSAyMyAtMTkgMjE0IC0xOCAyMzcgMQoxNiAxMyAxNyA0NiAxNCA0MDUgbC0zIDM5MSAtMzEgNjUgYy0zNyA3NyAtODcgMTMwIC0xNTIgMTYxIC01OCAyOCAtMjAzIDM3Ci0yNjcgMTZ6Ii8+CjxwYXRoIGQ9Ik0xNjU5MyA5NDQ2IGMtODMgLTIwIC0xNjQgLTY2IC0yMjQgLTEyNSAtOTkgLTEwMCAtMTQyIC0yMjYgLTE0MQotNDE2IDEgLTE5OSA0MSAtMzE0IDE0MCAtNDA3IDkzIC04NyAxODggLTExOSAzNTcgLTExOSAxMjUgLTEgMTg0IDExIDI3MSA1MwoxODkgOTEgMjg3IDMxOCAyNTUgNTkwIC0yOCAyNDAgLTEzNSAzNzYgLTMzMyA0MjMgLTc2IDE4IC0yNTIgMTggLTMyNSAxegptMjQyIC0yMjUgYzUwIC0yMyA3OCAtNTMgMTA3IC0xMTYgMjAgLTQ0IDIzIC02NSAyMyAtMTg1IDAgLTEzMCAtMSAtMTM3IC0zMAotMTk1IC00MCAtODAgLTkyIC0xMTcgLTE3NCAtMTIzIC0xNzYgLTEzIC0yNjUgMTE5IC0yNDggMzY3IDEwIDEzNyA2MyAyMjcKMTUyIDI1OSA0NyAxNyAxMjYgMTMgMTcwIC03eiIvPgo8cGF0aCBkPSJNMTc3NzMgOTQ0NiBjLTgzIC0yMCAtMTY0IC02NiAtMjI0IC0xMjUgLTk5IC0xMDAgLTE0MiAtMjI2IC0xNDEKLTQxNiAxIC0xOTkgNDEgLTMxNCAxNDAgLTQwNyA5MyAtODcgMTg4IC0xMTkgMzU3IC0xMTkgMTI1IC0xIDE4NCAxMSAyNzEgNTMKMTg5IDkxIDI4NyAzMTggMjU1IDU5MCAtMjggMjQwIC0xMzUgMzc2IC0zMzMgNDIzIC03NiAxOCAtMjUyIDE4IC0zMjUgMXoKbTI0MiAtMjI1IGM1MCAtMjMgNzggLTUzIDEwNyAtMTE2IDIwIC00NCAyMyAtNjUgMjMgLTE4NSAwIC0xMzAgLTEgLTEzNyAtMzAKLTE5NSAtNDAgLTgwIC05MiAtMTE3IC0xNzQgLTEyMyAtMTc2IC0xMyAtMjY1IDExOSAtMjQ4IDM2NyAxMCAxMzcgNjMgMjI3CjE1MiAyNTkgNDcgMTcgMTI2IDEzIDE3MCAtN3oiLz4KPHBhdGggZD0iTTYyOTIgOTQyNCBsLTIyIC0xNSAwIC00ODkgYzAgLTQyMSAyIC00OTEgMTUgLTUwNCAzMCAtMjkgMTk1IC0zMwoyNDcgLTUgMTcgOSAxOCAzNiAxOCA1MDQgbDAgNDk0IC0yMiAxNSBjLTE3IDEyIC00OCAxNiAtMTE4IDE2IC03MCAwIC0xMDEgLTQKLTExOCAtMTZ6Ii8+CjxwYXRoIGQ9Ik04NjE2IDk0MjcgYy0xNiAtMTIgLTE3IC00MSAtMTQgLTQwMiA0IC00MjYgNSAtNDMwIDY2IC01MjAgMzMgLTQ4CjEwOCAtMTAwIDE2NCAtMTE2IDY2IC0xNyAxODcgLTEzIDI0NCA5IDU4IDIxIDEyNCA2NSAxNzIgMTEyIGwzMiAzMiAwIC02MCBjMAotODAgOSAtODcgMTIyIC04NyA3NyAwIDkyIDMgMTA0IDE5IDEyIDE3IDE0IDEwMyAxNCA1MDggbDAgNDg4IC0yNSAxNiBjLTMzCjIyIC0yMzEgMTcgLTI0NSAtNiAtNiAtOSAtMTAgLTE1MyAtMTAgLTMzOSBsMCAtMzI1IC01NiAtNTQgYy02MiAtNjAgLTEwNQotODIgLTE2MSAtODIgLTU1IDAgLTEwMCAzMiAtMTI2IDg4IC0yMSA0NSAtMjIgNjMgLTI1IDM3NyAtMyAyOTEgLTUgMzMxIC0xOQozNDMgLTIzIDE3IC0yMTMgMTcgLTIzNyAtMXoiLz4KPHBhdGggZD0iTTEyMTYyIDk0MjQgbC0yMiAtMTUgMCAtNDg5IGMwIC00MjEgMiAtNDkxIDE1IC01MDQgMzAgLTI5IDE5NSAtMzMKMjQ3IC01IDE3IDkgMTggMzYgMTggNTA0IGwwIDQ5NCAtMjIgMTUgYy0xNyAxMiAtNDggMTYgLTExOCAxNiAtNzAgMCAtMTAxIC00Ci0xMTggLTE2eiIvPgo8cGF0aCBkPSJNMjAyNjIgOTQyNCBsLTIyIC0xNSAwIC00ODkgYzAgLTQyMSAyIC00OTEgMTUgLTUwNCAzMCAtMjkgMTk1IC0zMwoyNDcgLTUgMTcgOSAxOCAzNiAxOCA1MDQgbDAgNDk0IC0yMiAxNSBjLTE3IDEyIC00OCAxNiAtMTE4IDE2IC03MCAwIC0xMDEgLTQKLTExOCAtMTZ6Ii8+CjxwYXRoIGQ9Ik0xMjM1NyA3MjYwIGMtOTYgLTI1IC0xNzIgLTkyIC0yMDIgLTE3OSAtOSAtMjUgLTIxIC05OSAtMjcgLTE2MwpsLTExIC0xMTggLTYyIDAgYy04MyAwIC05MCAtMTAgLTkwIC0xMTUgMCAtMTA2IDcgLTExNSA5MSAtMTE1IGw2NCAwIDAgLTM4OQpjMCAtMzMzIDIgLTM5MiAxNSAtNDA1IDMwIC0zMCAyMTcgLTMzIDI1MiAtNCAxMCA4IDEzIDkxIDEzIDQwNCBsMCAzOTQgOTQgMApjMTE3IDAgMTIxIDMgMTIxIDExNSAwIDExMiAtMyAxMTUgLTEyMiAxMTUgbC05NiAwIDUgODMgYzggMTM4IDQ2IDE3NyAxNTQKMTU1IDc1IC0xNSA3NyAtMTUgOTEgMTIgMTMgMjYgMTYgMTA4IDQgMTUwIC0xMiA0MiAtNjAgNjEgLTE2MyA2NSAtNTEgMyAtMTEwCjAgLTEzMSAtNXoiLz4KPHBhdGggZD0iTTEzMDI5IDY4MDIgYy0xNzEgLTQ2IC0yODggLTE2OCAtMzM1IC0zNTIgLTI1IC05MyAtMjIgLTI4MCA1IC0zODQKMjYgLTk3IDU1IC0xNDggMTE5IC0yMDggOTIgLTg2IDE4OCAtMTE4IDM1MyAtMTIwIDU5IDAgMTMxIDUgMTYwIDEyIDE4MSA0MgozMDQgMTYzIDM1NSAzNTAgMjEgNzggMjQgMjc0IDUgMzYzIC0zNiAxNjYgLTEzOSAyODcgLTI4NSAzMzMgLTc5IDI1IC0yOTMgMjkKLTM3NyA2eiBtMjU2IC0yMjEgYzUwIC0yMyA3OCAtNTMgMTA3IC0xMTYgMjAgLTQ0IDIzIC02NSAyMyAtMTg1IDAgLTEzMCAtMQotMTM3IC0zMCAtMTk1IC00MCAtODAgLTkyIC0xMTcgLTE3NCAtMTIzIC0xNzYgLTEzIC0yNjUgMTE5IC0yNDggMzY3IDEwIDEzNwo2MyAyMjcgMTUyIDI1OSA0NyAxNyAxMjYgMTMgMTcwIC03eiIvPgo8cGF0aCBkPSJNMTQzMDMgNjc5OSBjLTI0IC0xMSAtNjcgLTQ4IC05OCAtODEgbC01NSAtNTkgMCA2MCBjMCA3NSAtOSA4MQotMTI0IDgxIC02NCAwIC04OCAtNCAtMTAwIC0xNiAtMTQgLTE0IC0xNiAtNzMgLTE2IC01MDQgMCAtNDIxIDIgLTQ5MSAxNQotNTA0IDE5IC0xOSAxMTIgLTMwIDE3NyAtMjIgOTUgMTMgODggLTE1IDg4IDMzNCAwIDM0MiAtNSAzMTcgNzQgNDAwIDY4IDcyCjEwMyA4MyAxOTAgNjAgNjkgLTE4IDc2IC04IDc2IDEyMSAwIDU4IC00IDExMSAtOCAxMTggLTI0IDM4IC0xNTMgNDUgLTIxOSAxMnoiLz4KPHBhdGggZD0iTTEwOTM1IDQ2MTcgYy02NyAtMjIgLTEwMSAtNDQgLTEzOCAtODggLTQ4IC01NiAtNjYgLTExMiAtNzkgLTI1MQpsLTEyIC0xMTggLTYyIDAgYy04MSAwIC04OSAtMTAgLTg5IC0xMTUgMCAtMTA2IDcgLTExNSA5MSAtMTE1IGw2NCAwIDAgLTM4OQpjMCAtMzMzIDIgLTM5MiAxNSAtNDA1IDMwIC0zMCAyMTcgLTMzIDI1MiAtNCAxMCA4IDEzIDkxIDEzIDQwNCBsMCAzOTQgOTQgMApjMTE3IDAgMTIxIDMgMTIxIDExNSAwIDExMiAtMyAxMTUgLTEyMiAxMTUgbC05NiAwIDUgODMgYzggMTM4IDQ2IDE3NyAxNTQKMTU1IDc1IC0xNSA3NyAtMTUgOTEgMTIgMTMgMjYgMTYgMTA4IDQgMTUwIC0xMiA0MiAtNjAgNjEgLTE2OSA2NiAtNjQgMyAtMTEwCjAgLTEzNyAtOXoiLz4KPHBhdGggZD0iTTY2NDMgNDU4MSBjLTc2IC0xMyAtMTEwIC03MCAtMTAwIC0xNjYgNiAtNjMgMjIgLTkwIDYwIC0xMDYgMzcgLTE2CjE1OCAtMTUgMTk2IDAgMzggMTYgNjEgNjUgNjEgMTI5IDAgNjYgLTE3IDExMCAtNDkgMTI2IC0zNCAxNyAtMTE1IDI1IC0xNjgKMTd6Ii8+CjxwYXRoIGQ9Ik0xMDIwMyA0NTgxIGMtNzYgLTEzIC0xMTAgLTcwIC0xMDAgLTE2NiA2IC02MyAyMiAtOTAgNjAgLTEwNiAzNwotMTYgMTU4IC0xNSAxOTYgMCAzOCAxNiA2MSA2NSA2MSAxMjkgMCA2NiAtMTcgMTEwIC00OSAxMjYgLTM0IDE3IC0xMTUgMjUKLTE2OCAxN3oiLz4KPHBhdGggZD0iTTExNDQzIDQ1ODEgYy03NiAtMTMgLTExMCAtNzAgLTEwMCAtMTY2IDYgLTYzIDIyIC05MCA2MCAtMTA2IDM3Ci0xNiAxNTggLTE1IDE5NiAwIDM4IDE2IDYxIDY1IDYxIDEyOSAwIDY2IC0xNyAxMTAgLTQ5IDEyNiAtMzQgMTcgLTExNSAyNQotMTY4IDE3eiIvPgo8cGF0aCBkPSJNMTQ3OTMgNDU4MSBjLTc2IC0xMyAtMTEwIC03MCAtMTAwIC0xNjYgNiAtNjMgMjIgLTkwIDYwIC0xMDYgMzcKLTE2IDE1OCAtMTUgMTk2IDAgMzggMTYgNjEgNjUgNjEgMTI5IDAgNjYgLTE3IDExMCAtNDkgMTI2IC0zNCAxNyAtMTE1IDI1Ci0xNjggMTd6Ii8+CjxwYXRoIGQ9Ik00ODY4IDQ1MjUgYy0xNTYgLTM4IC0yNjQgLTEzNCAtMzAzIC0yNzAgLTI1IC04NiAtMTcgLTIxMiAxOCAtMjg4CjQ1IC05OSAxMDggLTE0OSAzMDkgLTI1MCAxOTMgLTk2IDIzMSAtMTI2IDI0MyAtMTk2IDUgLTMzIDIgLTUxIC0xNyAtODkgLTYwCi0xMjIgLTI0NiAtMTM1IC00NTMgLTMyIC05NiA0OCAtMTIyIDUxIC0xMzIgMTMgLTE1IC01MSAtOCAtMTY5IDEwIC0xOTcgMjIKLTMzIDExMyAtNzkgMjAxIC0xMDAgMTIyIC0zMSAzMTIgLTIxIDQyMSAyMiA1MSAyMCAxMzQgNzMgMTYyIDEwMyAxMTMgMTIzCjE0NCAzMTYgNzQgNDY1IC01MCAxMDcgLTEzMiAxNzAgLTM0MyAyNjQgLTEyNCA1NSAtMTc2IDkzIC0yMDAgMTQ3IC0zMyA3NSAtNwoxNDEgNjkgMTc1IDcyIDMyIDE3NCAyMiAyODMgLTI2IDExMiAtNTEgMTMxIC01MSAxNDMgLTYgMTUgNTcgNSAxNjUgLTE4IDE5MQotNjUgNzEgLTMxMyAxMTEgLTQ2NyA3NHoiLz4KPHBhdGggZD0iTTEzMzg0IDQ1MDYgYy0xNyAtOCAtMzQgLTIxIC0zOCAtMzEgLTMgLTkgLTYgLTMwNyAtNiAtNjYxIGwwIC02NDUKMjYgLTI1IDI1IC0yNiAyODIgNCBjMjQ4IDQgMjkyIDggMzYyIDI2IDIzNyA2NCAzNzkgMjA4IDQ0MSA0NDcgMjUgOTggMjYgMzYwCjEgNDYwIC02NyAyNjggLTI1NiA0MjEgLTU2MiA0NTUgLTEzNyAxNSAtNDkzIDEyIC01MzEgLTR6IG00ODYgLTIyNiBjMTIzIC0yMAoyMzUgLTEwMiAyODEgLTIwNiA4NyAtMTk1IDUyIC00OTEgLTcyIC02MTUgLTc4IC03OCAtMTc3IC0xMDkgLTM1MSAtMTA5IGwtOTgKMCAwIDQ3MCAwIDQ3MCA4OCAwIGM0OCAwIDExNiAtNSAxNTIgLTEweiIvPgo8cGF0aCBkPSJNOTQ2NSA0NDEzIGMtNTIgLTggLTU1IC0xNiAtNTUgLTEzOSBsMCAtMTE0IC02NCAwIGMtODQgMCAtOTEgLTkKLTkxIC0xMTUgMCAtMTA2IDcgLTExNSA5MSAtMTE1IGw2MyAwIDMgLTMxMiBjMyAtMjc3IDYgLTMxOCAyMiAtMzUzIDI5IC02NQo2NCAtMTA0IDExOSAtMTMzIDQ4IC0yNSA2MSAtMjcgMTcyIC0yNyA5NyAwIDEyNyA0IDE1OCAxOSA0NCAyMiA1MiA0NCA1MSAxMzkKLTEgOTEgLTExIDEwMiAtODMgODAgLTQ0IC0xMiAtNjEgLTEzIC05MyAtNCAtNjQgMjAgLTY4IDM5IC02OCAzMzYgbDAgMjU1CjEwNCAwIGM4MCAwIDEwOCA0IDEyMCAxNSAzMiAzMiAzMiAxNjggLTEgMjAwIC0xMSAxMSAtNDAgMTUgLTExOSAxNSBsLTEwNCAwCjAgMTA0IGMwIDEzOCAtNiAxNDYgLTExNSAxNTEgLTQ0IDIgLTkzIDEgLTExMCAtMnoiLz4KPHBhdGggZD0iTTU5MjUgNDE2NiBjLTE2OCAtNDEgLTI4NyAtMTY3IC0zMzEgLTM1MiAtMjAgLTgzIC0yMiAtMjczIC01IC0zNTkKMzIgLTE1MiAxMjkgLTI3OSAyNDkgLTMyNiA3OSAtMzEgMjU1IC0zOCAzMzggLTE0IDc3IDIyIDE0OSA1OSAxNjggODcgMjMgMzIKMjMgMjAwIDAgMjIyIC0xNyAxOCAtMjIgMTYgLTEwMiAtMzggLTkwIC02MCAtMTgxIC03MyAtMjYwIC0zNSAtODUgNDIgLTEyOAoxNTUgLTEyMCAzMTkgOSAxNzYgNzAgMjY5IDE4MiAyNzggNzggNiAxMTQgLTMgMTg5IC00OCA4MCAtNDggMTAwIC01MCAxMTcKLTEwIDE5IDQ2IDEwIDE3MyAtMTUgMjAxIC02NCA3MSAtMjcwIDEwOSAtNDEwIDc1eiIvPgo8cGF0aCBkPSJNNzM4MSA0MTY0IGMtMTY3IC00NSAtMjgyIC0xNzEgLTMyNiAtMzU5IC05IC0zNCAtMTUgLTExMiAtMTUgLTE4MQowIC0yOTUgMTA2IC00NTYgMzM2IC01MTAgMTgyIC00MiA1MTQgNCA1NTEgNzYgMTcgMzQgMTcgMTQxIC0xIDE2NSAtMTMgMTgKLTE4IDE5IC01OCA3IC0xNjkgLTQ5IC0yMDIgLTU0IC0yOTggLTUwIC04NyAzIC0xMDMgNyAtMTQ2IDMzIC01NyAzNiAtOTEgOTUKLTEwMSAxNzMgbC02IDUyIDMxMCAwIDMxMCAwIDIxIDIzIGMxOSAyMCAyMiAzNSAyMiAxMTUgMCAxMDcgLTEzIDE3NyAtNDYgMjQ4Ci00OSAxMDQgLTE0MCAxNzkgLTI1OCAyMTAgLTY2IDE4IC0yMjYgMTcgLTI5NSAtMnogbTIxNiAtMTk1IGM2NCAtMjQgMTEyCi0xMDAgMTEzIC0xNzYgbDAgLTQzIC0xOTYgMCAtMTk3IDAgNyA0MiBjMTEgNzAgNTUgMTM5IDEwNSAxNjUgNDggMjUgMTIwIDMwCjE2OCAxMnoiLz4KPHBhdGggZD0iTTg2MzcgNDE1NiBjLTcwIC0yOSAtOTggLTQ3IC0xNTQgLTk5IGwtNDMgLTQwIDAgNjEgYzAgNzYgLTggODIKLTEyNCA4MiAtNjQgMCAtODggLTQgLTEwMCAtMTYgLTE0IC0xNCAtMTYgLTczIC0xNiAtNTA0IDAgLTQyMSAyIC00OTEgMTUKLTUwNCAxOSAtMTkgMTEyIC0zMCAxNzcgLTIyIDk2IDEzIDg4IC0xNyA4OCAzNTUgbDAgMzI5IDU1IDU1IGMxMTUgMTE1IDIzMAoxMTQgMjg3IC0xIDIyIC00NiAyMyAtNTYgMjYgLTM3OSAzIC0yODYgNiAtMzM0IDE5IC0zNDUgMTggLTE0IDE3OSAtMTggMjI2Ci01IGwyOCA4IC0zIDM5NyAtMyAzOTcgLTMxIDY1IGMtNjMgMTMxIC0xNDMgMTgzIC0yOTQgMTg4IC04MiAyIC0xMDMgLTEgLTE1MwotMjJ6Ii8+CjxwYXRoIGQ9Ik0xMjE5NSA0MTY2IGMtMTY4IC00MSAtMjg3IC0xNjcgLTMzMSAtMzUyIC0yMCAtODMgLTIyIC0yNzMgLTUgLTM1OQozMiAtMTUyIDEyOSAtMjc5IDI0OSAtMzI2IDc5IC0zMSAyNTUgLTM4IDMzOCAtMTQgNzcgMjIgMTQ5IDU5IDE2OCA4NyAyMyAzMgoyMyAyMDAgMCAyMjIgLTE3IDE4IC0yMiAxNiAtMTAyIC0zOCAtOTAgLTYwIC0xODEgLTczIC0yNjAgLTM1IC04NSA0MiAtMTI4CjE1NSAtMTIwIDMxOSA5IDE3NiA3MCAyNjkgMTgyIDI3OCA3OCA2IDExNCAtMyAxODkgLTQ4IDgwIC00OCAxMDAgLTUwIDExNwotMTAgMTkgNDYgMTAgMTczIC0xNSAyMDEgLTY0IDcxIC0yNzAgMTA5IC00MTAgNzV6Ii8+CjxwYXRoIGQ9Ik0xNTQzOCA0MTY2IGMtNzMgLTIxIC0xNTAgLTY5IC0xODUgLTExNSAtNjIgLTgxIC03OSAtMTk3IC00MyAtMjk0CjM2IC05NyAxMDcgLTE0OSAzMTUgLTIzMyA4NSAtMzQgMTI1IC03MCAxMjUgLTExNCAwIC00NiAtMTYgLTY5IC02MyAtOTEgLTc1Ci0zNCAtMTcxIC0yMiAtMjkxIDM2IC00OSAyNCAtNzUgMzEgLTg2IDI1IC0zNSAtMTkgLTMxIC0xNzAgNSAtMjEwIDQzIC00OAoyMzIgLTgzIDM2NyAtNjggMTA4IDExIDE3OCA0MCAyNDIgOTkgNjkgNjMgOTYgMTI4IDk2IDIzMiAwIDg5IC0yOCAxNTUgLTg4CjIwOSAtNDkgNDQgLTkzIDY4IC0yMTMgMTEzIC0xMDYgNDEgLTEzNSA1OSAtMTU1IDk2IC0xOCAzNSAtMTAgNzAgMjIgMTAwIDIwCjE5IDM5IDI0IDk0IDI3IDcyIDQgMTA4IC00IDIwNCAtNDYgNTcgLTI1IDU5IC0yNiA3MyAtNiAxMSAxNCAxNCA0MCAxMSA5NyAtNAo5MSAtMTUgMTA2IC0xMDEgMTMzIC03MCAyMiAtMjY2IDI4IC0zMjkgMTB6Ii8+CjxwYXRoIGQ9Ik0xNjQxNSA0MTY2IGMtMTY4IC00MSAtMjg3IC0xNjcgLTMzMSAtMzUyIC0yMCAtODMgLTIyIC0yNzMgLTUgLTM1OQozMiAtMTUyIDEyOSAtMjc5IDI0OSAtMzI2IDc5IC0zMSAyNTUgLTM4IDMzOCAtMTQgNzcgMjIgMTQ5IDU5IDE2OCA4NyAyMyAzMgoyMyAyMDAgMCAyMjIgLTE3IDE4IC0yMiAxNiAtMTAyIC0zOCAtOTAgLTYwIC0xODEgLTczIC0yNjAgLTM1IC04NSA0MiAtMTI4CjE1NSAtMTIwIDMxOSA5IDE3NiA3MCAyNjkgMTgyIDI3OCA3OCA2IDExNCAtMyAxODkgLTQ4IDgwIC00OCAxMDAgLTUwIDExNwotMTAgMTkgNDYgMTAgMTczIC0xNSAyMDEgLTY0IDcxIC0yNzAgMTA5IC00MTAgNzV6Ii8+CjxwYXRoIGQ9Ik0xNzMyOSA0MTYyIGMtMTI3IC0zNCAtMjQwIC0xMjQgLTI5MyAtMjM1IC00MyAtODggLTU5IC0xNzEgLTU5Ci0yOTcgMSAtMTkxIDM2IC0zMDMgMTI1IC0zOTYgOTEgLTk2IDE5NSAtMTM0IDM2OSAtMTM2IDEyMiAtMSAxODggMTIgMjc3IDU0CjE3NCA4MSAyNzQgMjkxIDI1NyA1MzggLTEwIDE1NyAtMzAgMjIyIC05NCAzMTggLTQwIDYxIC0xMjcgMTIzIC0yMDUgMTQ4IC03OQoyNSAtMjkzIDI5IC0zNzcgNnogbTI1NiAtMjIxIGM1MSAtMjMgNzggLTUzIDEwNyAtMTE2IDIwIC00NCAyMyAtNjYgMjMgLTE4NQowIC0xMzAgLTEgLTEzNyAtMzAgLTE5NSAtNDAgLTgwIC05MiAtMTE3IC0xNzQgLTEyMyAtMTc2IC0xMyAtMjY1IDExOSAtMjQ4CjM2NyAxMCAxMzcgNjMgMjI3IDE1MiAyNTkgNDcgMTcgMTI2IDEzIDE3MCAtN3oiLz4KPHBhdGggZD0iTTE5NTIxIDQxNjQgYy0xNjcgLTQ1IC0yODIgLTE3MSAtMzI2IC0zNTkgLTkgLTM0IC0xNSAtMTEyIC0xNSAtMTgxCjAgLTI5NSAxMDYgLTQ1NiAzMzYgLTUxMCAxODIgLTQyIDUxNCA0IDU1MSA3NiAxNyAzNCAxNyAxNDEgLTEgMTY1IC0xMyAxOAotMTggMTkgLTU4IDcgLTE2OSAtNDkgLTIwMiAtNTQgLTI5OCAtNTAgLTg3IDMgLTEwMyA3IC0xNDYgMzMgLTU3IDM2IC05MSA5NQotMTAxIDE3MyBsLTYgNTIgMzEwIDAgMzEwIDAgMjEgMjMgYzE5IDIwIDIyIDM1IDIyIDExNSAwIDEwNyAtMTMgMTc3IC00NiAyNDgKLTQ5IDEwNCAtMTQwIDE3OSAtMjU4IDIxMCAtNjYgMTggLTIyNiAxNyAtMjk1IC0yeiBtMjE2IC0xOTUgYzY0IC0yNCAxMTIKLTEwMCAxMTMgLTE3NiBsMCAtNDMgLTE5NiAwIC0xOTcgMCA3IDQyIGMxMSA3MCA1NSAxMzkgMTA1IDE2NSA0OCAyNSAxMjAgMzAKMTY4IDEyeiIvPgo8cGF0aCBkPSJNMjA3MjMgNDE1OSBjLTI0IC0xMSAtNjcgLTQ4IC05OCAtODEgbC01NSAtNTkgMCA2MCBjMCA3NSAtOSA4MQotMTI0IDgxIC02NCAwIC04OCAtNCAtMTAwIC0xNiAtMTQgLTE0IC0xNiAtNzMgLTE2IC01MDQgMCAtNDIxIDIgLTQ5MSAxNQotNTA0IDE5IC0xOSAxMTIgLTMwIDE3NyAtMjIgOTUgMTMgODggLTE1IDg4IDMzNCAwIDM0MiAtNSAzMTcgNzQgNDAwIDY4IDcyCjEwMyA4MyAxOTAgNjAgNjkgLTE4IDc2IC04IDc2IDEyMSAwIDU4IC00IDExMSAtOCAxMTggLTI0IDM4IC0xNTMgNDUgLTIxOSAxMnoiLz4KPHBhdGggZD0iTTY1ODIgNDE0NCBsLTIyIC0xNSAwIC00ODkgYzAgLTQyMSAyIC00OTEgMTUgLTUwNCAzMCAtMjkgMTk1IC0zMwoyNDcgLTUgMTcgOSAxOCAzNiAxOCA1MDQgbDAgNDk0IC0yMiAxNSBjLTE3IDEyIC00OCAxNiAtMTE4IDE2IC03MCAwIC0xMDEgLTQKLTExOCAtMTZ6Ii8+CjxwYXRoIGQ9Ik0xMDE0MiA0MTQ0IGwtMjIgLTE1IDAgLTQ4OSBjMCAtNDIxIDIgLTQ5MSAxNSAtNTA0IDMwIC0yOSAxOTUgLTMzCjI0NyAtNSAxNyA5IDE4IDM2IDE4IDUwNCBsMCA0OTQgLTIyIDE1IGMtMTcgMTIgLTQ4IDE2IC0xMTggMTYgLTcwIDAgLTEwMSAtNAotMTE4IC0xNnoiLz4KPHBhdGggZD0iTTExMzgyIDQxNDQgbC0yMiAtMTUgMCAtNDg5IGMwIC00MjEgMiAtNDkxIDE1IC01MDQgMzAgLTI5IDE5NSAtMzMKMjQ3IC01IDE3IDkgMTggMzYgMTggNTA0IGwwIDQ5NCAtMjIgMTUgYy0xNyAxMiAtNDggMTYgLTExOCAxNiAtNzAgMCAtMTAxIC00Ci0xMTggLTE2eiIvPgo8cGF0aCBkPSJNMTQ3MzIgNDE0NCBsLTIyIC0xNSAwIC00ODkgYzAgLTQyMSAyIC00OTEgMTUgLTUwNCAzMCAtMjkgMTk1IC0zMwoyNDcgLTUgMTcgOSAxOCAzNiAxOCA1MDQgbDAgNDk0IC0yMiAxNSBjLTE3IDEyIC00OCAxNiAtMTE4IDE2IC03MCAwIC0xMDEgLTQKLTExOCAtMTZ6Ii8+CjxwYXRoIGQ9Ik0xODExNSA0MTQ2IGMtMTQgLTEwIC0xNyAtMjEgLTEyIC00OCAzIC0xOSA3MiAtMjM3IDE1MyAtNDg0IDk5Ci0zMDAgMTU1IC00NTYgMTcwIC00NzEgMTUgLTE1IDM5IC0yMyA4OSAtMjggODEgLTkgMjI2IDAgMjU0IDE0IDE1IDggNTggMTI2CjE3NSA0NzkgODYgMjU4IDE1NiA0ODIgMTU2IDUwMCAwIDIxIC02IDM1IC0xOSA0MiAtMjggMTUgLTIxMyAxMyAtMjM0IC0yIC05Ci04IC01OSAtMTUzIC0xMjMgLTM2MyAtNTggLTE5MiAtMTA5IC0zNTMgLTExMyAtMzU4IC00IC00IC00MCAxMDAgLTgwIDIzMAotMTM1IDQzNyAtMTUxIDQ4MiAtMTcxIDQ5MyAtMjkgMTUgLTIyMiAxMyAtMjQ1IC00eiIvPgo8cGF0aCBkPSJNMjEwMzYgNDE0NCBjLTkgLTggLTE2IC0yNSAtMTYgLTM2IDAgLTMxIDMzNyAtOTI5IDM2MSAtOTYyIGwyMiAtMjkKLTY3IC0xNjYgYy0zNiAtOTEgLTY2IC0xNzIgLTY2IC0xNzggMCAtNyAxMSAtMjAgMjUgLTI5IDMzIC0yMiAyMjAgLTE2IDI1NyA4CjE5IDEzIDY0IDEzNSAyNDYgNjcwIDEyMiAzNjAgMjIyIDY2NiAyMjIgNjc5IDAgNDkgLTEyIDU0IC0xMjcgNTcgLTc4IDIgLTExMwowIC0xMjQgLTEwIC0xMCAtNyAtNjEgLTE1MiAtMTIwIC0zNDAgLTU2IC0xODEgLTEwNSAtMzI4IC0xMDkgLTMyOCAtMyAwIC01NwoxNDUgLTExOSAzMjMgLTYyIDE3NyAtMTIwIDMzMCAtMTI5IDM0MCAtMjEgMjQgLTIzMiAyNiAtMjU2IDF6Ii8+CjwvZz4KPC9zdmc+Cg==
+    mediatype: image/svg+xml
+  install:
+    spec:
+      clusterPermissions:
+      - rules:
+        - apiGroups:
+          - security.openshift.io
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+          resources:
+          - securitycontextconstraints
+        - apiGroups:
+          - authorization.openshift.io
+          - rbac.authorization.k8s.io
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+          resources:
+          - clusterrolebindings
+        - apiGroups:
+          - apiextensions.k8s.io
+          resources:
+          - customresourcedefinitions
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - deploy.st4sd.ibm.com
+          resources:
+          - simulationtoolkits
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+        - apiGroups:
+          - deploy.st4sd.ibm.com
+          resources:
+          - simulationtoolkits/finalizers
+          verbs:
+          - update
+        - apiGroups:
+          - deploy.st4sd.ibm.com
+          resources:
+          - simulationtoolkits/status
+          verbs:
+          - get
+          - patch
+          - update
+        - apiGroups:
+          - authentication.k8s.io
+          resources:
+          - tokenreviews
+          verbs:
+          - create
+        - apiGroups:
+          - authorization.k8s.io
+          resources:
+          - subjectaccessreviews
+          verbs:
+          - create
+        # VV: we need to be able to auto-detect the cluster domain, this means reading the Ingress config
+        - apiGroups:
+          - config.openshift.io
+          verbs:
+          - get
+          - list
+          - watch
+          resources:
+          - ingresses
+        #### this is the equivalent to system:auth-delegator
+        #### we need it for openshift/oauth-proxy
+        - verbs:
+            - create
+          apiGroups:
+            - authentication.k8s.io
+          resources:
+            - tokenreviews
+        - verbs:
+            - create
+          apiGroups:
+            - authorization.k8s.io
+          resources:
+            - subjectaccessreviews
+        - apiGroups:
+          - ""
+          resources:
+            # VV: we can optionally check whether users have access to services living in this
+            # namespace before we let them access the st4sd microservices
+            - services
+          verbs: ["get", "list", "watch"]
+
+        # VV: Workflow users may need to work with Job objects because flow creates 1 Job per component Task
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - update
+          - watch
+          - deletecollection
+
+        - apiGroups:
+          - batch
+          resources:
+          - jobs/status
+          verbs:
+          - get
+          - list
+          - watch
+
+        # VV: Workflow users may interact with pods (e.g. oc debug, oc exec etc)
+        - apiGroups:
+          - ""
+          resources:
+            - pods
+            # VV: we can optionally check whether users have access to services living in this
+            # namespace before we let them access the st4sd microservices
+            - services
+            # VV: We don't need these ones below for deploying but having them around makes it that
+            # much easier to troubleshoot the workflow stack
+            - pods/attach
+            - pods/exec
+          verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+
+        - apiGroups:
+          - ""
+          resources:
+            - pods/log
+          verbs: ["get", "list", "watch"]
+
+        # VV: Users may end up creating/managing Workflow and Dataset objects
+        - apiGroups:
+          # VV: This is the old ApiGroup it's deprecated and will be removed
+          - hpsys.ie.ibm.com
+          - st4sd.ibm.com
+          - com.ie.ibm.hpsys
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - watch
+          - patch
+        #### role-stack-deploy.yaml
+        # VV: Permission to read current namespace and object
+        - apiGroups:
+          - ""
+          resources:
+          - namespaces
+          verbs:
+          - get
+
+        - apiGroups:
+          - ""
+          - project.openshift.io
+          resources:
+          - projects
+          verbs:
+          - get
+        # VV: Permissions required to deploy helm updates
+        - apiGroups:
+            - rbac.authorization.k8s.io
+            - authorization.openshift.io
+          resources:
+            - roles
+            - rolebindings
+          verbs:  ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+
+        # VV: Like above, but for persistentvolumeclaims instead
+        - apiGroups:
+            - ""
+          verbs: ["list", "watch", "get"]
+          resources: 
+            - persistentvolumeclaims
+
+        # VV: We use deploymentConfigs for the various parts of the stack
+        - apiGroups:
+            - apps.openshift.io
+          resources:
+            - deploymentconfigs
+          verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+
+        # VV: DeploymentConfigs also calls for the ability to create imagestreams, and run "oc import-image"
+        - apiGroups:
+            - image.openshift.io
+          resources:
+            - imagestreams
+          verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+
+        - apiGroups:
+            - image.openshift.io
+          resources:
+            - imagestreamimports
+          verbs: ["create"]
+
+        # VV: We also create a couple of OpenShift routes to expose services that we spin up
+        - apiGroups:
+            - route.openshift.io
+          resources:
+            - routes
+          verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+
+        # VV: We also create a couple of OpenShift routes to expose services that we spin up
+        - apiGroups:
+            - route.openshift.io
+          resources:
+            - routes/custom-host
+          verbs: ["create"]
+
+        # VV: We don't use deployments now but may end up using them in the future
+        - apiGroups:
+            - apps
+          resources:
+            - deployments
+          verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+
+        # VV: Required to launch and manage Jobs in the namespace
+        - apiGroups:
+          - batch
+          resources:
+          - jobs
+          verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+
+        # VV: This is for common k8s objects such as pods, sa, secrets, etc
+        - apiGroups:
+          - ""
+          resources:
+            - replicationcontrollers
+            - serviceaccounts
+            - configmaps
+            - endpoints
+            - pods
+            - secrets
+            # VV: we can optionally check whether users have access to services living in this
+            # namespace before we let them access the st4sd microservices
+            - services
+            # VV: We don't need these ones below for deploying but having them around makes it that 
+            # much easier to troubleshoot the workflow stack
+            - pods/attach
+            - pods/exec
+          verbs: ["create", "delete", "deletecollection", "get", "list", "patch", "update", "watch"]
+
+        - apiGroups:
+          - ""
+          resources:
+            - events
+          verbs: ["create", "get", "list", "patch", "watch"]
+
+        - apiGroups:
+          - ""
+          resources:
+            - pods/log
+          verbs: ["get", "list", "watch"]
+
+        # VV: This is for creating/managing Workflow and Dataset objects
+        - apiGroups:
+            # VV: This is the old ApiGroup it's deprecated and will be removed
+          - hpsys.ie.ibm.com
+          - st4sd.ibm.com
+          - com.ie.ibm.hpsys
+          resources:
+          - '*'
+          verbs:
+          - create
+          - delete
+          - get
+          - list
+          - patch
+          - watch
+          - update 
+        #### role-authenticate-microservices.yaml
+        - apiGroups:
+          - ""
+          resources:
+            - services
+          verbs: ["get", "list", "watch"]
+        - apiGroups:
+          - ""
+          resources:
+          - configmaps
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        #### default
+        - apiGroups:
+          - coordination.k8s.io
+          resources:
+          - leases
+          verbs:
+          - get
+          - list
+          - watch
+          - create
+          - update
+          - patch
+          - delete
+        - apiGroups:
+          - ""
+          resources:
+          - events
+          verbs:
+          - create
+          - patch
+        serviceAccountName: st4sd-olm-manager
+      deployments:
+      - label:
+          app.kubernetes.io/component: manager
+          app.kubernetes.io/created-by: st4sd-olm
+          app.kubernetes.io/instance: controller-manager
+          app.kubernetes.io/managed-by: kustomize
+          app.kubernetes.io/name: deployment
+          app.kubernetes.io/part-of: olm
+          control-plane: controller-manager
+        name: st4sd-olm
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              control-plane: controller-manager
+          strategy: {}
+          template:
+            metadata:
+              annotations:
+                kubectl.kubernetes.io/default-container: manager
+              labels:
+                control-plane: controller-manager
+            spec:
+              affinity:
+                nodeAffinity:
+                  requiredDuringSchedulingIgnoredDuringExecution:
+                    nodeSelectorTerms:
+                    - matchExpressions:
+                      - key: kubernetes.io/arch
+                        operator: In
+                        values:
+                        - amd64
+                      - key: kubernetes.io/os
+                        operator: In
+                        values:
+                        - linux
+              containers:
+              - args:
+                - --health-probe-bind-address=:8081
+                - --metrics-bind-address=127.0.0.1:8080
+                - --leader-elect
+                command:
+                - /manager
+                image: "quay.io/st4sd/official-base/st4sd-olm:v2.5.4"
+                imagePullPolicy: Always
+                livenessProbe:
+                  httpGet:
+                    path: /healthz
+                    port: 8081
+                  initialDelaySeconds: 15
+                  periodSeconds: 20
+                name: manager
+                readinessProbe:
+                  httpGet:
+                    path: /readyz
+                    port: 8081
+                  initialDelaySeconds: 5
+                  periodSeconds: 10
+                resources:
+                  limits:
+                    cpu: 1000m
+                    memory: 512Mi
+                  requests:
+                    cpu: 10m
+                    memory: 64Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  capabilities:
+                    drop:
+                    - ALL
+              securityContext:
+                runAsNonRoot: true
+              serviceAccountName: st4sd-olm-manager
+              terminationGracePeriodSeconds: 10
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - simulations
+  - hpc
+  - high-performance
+  - surrogates
+  links:
+  - name: st4sd-olm
+    url: https://st4sd.github.io/overview
+  maintainers:
+  - email: vassilis.vassiliadis@ibm.com
+    name: Vassilis Vassiliadis
+  maturity: alpha
+  provider:
+    name: IBM Research, Europe - Dublin
+    url: st4sd.github.io/overview
+  version: "0.9.1"
