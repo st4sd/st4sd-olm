@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export VERSION="0.9.2"
+export VERSION="0.9.3"
 
 # VV: All versions that go in the "stable" channel, version[i+1] replaces version[i]
 STABLE_VERSIONS=(
