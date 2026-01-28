@@ -71,6 +71,11 @@ type SimulationToolkitSpecSetup struct {
 	// oc get ingress.v1.config.openshift.io cluster -o=jsonpath='{.spec.domain}'
 	RouteDomain string `json:"routeDomain,omitempty"`
 
+	// (Optional) Whether this is a public catalog instance of ST4SD.
+	// If true, the catalog instance will be publicly accessible, running workflows will be disabled,
+	// and there will be no Datastore.
+	PublicCatalog bool `json:"publicCatalog,omitempty"`
+
 	// (Optional) Name of Secret that contains the keys username and password to use for setting up
 	// the "admin" account of the MongoDB instance for the Datastore. The value of the username field
 	// must be "admin". The value of the password should be a valid MongoDB password.
