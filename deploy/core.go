@@ -661,6 +661,18 @@ func ConfigurationToHelmValues(
 		return values, fmt.Errorf("unknown release %s", releaseName)
 	}
 
+	if configuration.PublicCatalog {
+		values["isGlobalRegistry"] = true
+		values["backendEnableBuildCanvas"] = false
+		values["backendEnableEditParameterisation"] = false
+		values["backendEnableEditExperiment"] = false
+		values["backendEnableRunExperiment"] = false
+		values["backendEnableLocalGraphLibraryWriteAccess"] = false
+		values["backendEnableCanvas"] = true
+
+		switchOff = append(switchOff, "installWorkflowOperator", "installDatastore")
+	}
+
 	for _, k := range switchOn {
 		values[k] = true
 	}
