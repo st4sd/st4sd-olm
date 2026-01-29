@@ -23,31 +23,6 @@ except ImportError:
     sys.exit(1)
 
 
-def get_default_bundle_version() -> str:
-    """
-    Extract appVersion from st4sd-deployment/helm-chart/Chart.yaml.
-
-    Returns:
-        The appVersion value from Chart.yaml
-
-    Raises:
-        FileNotFoundError: If Chart.yaml doesn't exist
-        KeyError: If appVersion field is missing
-    """
-    chart_path = Path("st4sd-deployment/helm-chart/Chart.yaml")
-
-    if not chart_path.exists():
-        raise FileNotFoundError(f"Chart.yaml not found at {chart_path}")
-
-    with open(chart_path) as f:
-        chart_data = yaml.safe_load(f)
-
-    if "appVersion" not in chart_data:
-        raise KeyError("appVersion field not found in Chart.yaml")
-
-    return chart_data["appVersion"]
-
-
 def get_default_olm_version() -> str:
     """
     Extract VERSION from scripts/constants.sh by sourcing the file and reading $VERSION.
@@ -95,20 +70,11 @@ Examples:
   # Use all defaults
   %(prog)s
   
-  # Custom bundle version only
-  %(prog)s --bundle-version 2.7.0
-  
-  # Custom OLM version only
+  # Custom OLM version
   %(prog)s --olm-version 0.11.0
-  
-  # All custom values
-  %(prog)s --bundle-version 2.7.0 --olm-version 0.11.0 --image-prefix quay.io/myorg/st4sd-olm
-        """,
+""",
     )
 
-    parser.add_argument(
-        "--bundle-version", help="Bundle version (default: appVersion from Chart.yaml)"
-    )
     parser.add_argument(
         "--olm-version", help="OLM version (default: VERSION from constants.sh)"
     )
@@ -211,11 +177,11 @@ def copy_crd_file(bundle_dir: Path) -> None:
 
 def process_csv_template(bundle_dir: Path, img_operator: str, version: str) -> None:
     """
-    Read CSV template, replace placeholders, and write to bundle.
+    Read CSV template, update image and memory settings, and write to bundle.
 
     Args:
         bundle_dir: Path to bundle directory
-        img_operator: Full container image URL (e.g., quay.io/st4sd/official-base/st4sd-olm:v2.6.0)
+        img_operator: Full container image URL (e.g., quay.io/st4sd/official-base/st4sd-olm:v0.11.0)
         version: OLM version string
 
     Raises:
@@ -228,21 +194,45 @@ def process_csv_template(bundle_dir: Path, img_operator: str, version: str) -> N
         raise FileNotFoundError(f"CSV template not found at {csv_template}")
 
     print(f"Processing CSV template: {csv_template}")
-    print(
-        f"  Replacing 'quay.io/st4sd/official-base/st4sd-olm%%' with '{img_operator}'"
-    )
-    print(f"  Replacing '%%VERSION%%' with '{version}'")
 
+    # Read the CSV template as YAML
     with open(csv_template) as f:
-        content = f.read()
+        csv_data = yaml.safe_load(f)
 
-    # Replace placeholders
-    content = content.replace("quay.io/st4sd/official-base/st4sd-olm", img_operator)
-    content = content.replace("%%VERSION%%", version)
+    # Update spec.version
+    print(f"  Setting spec.version to '{version}'")
+    csv_data["spec"]["version"] = version
 
+    new_name = f"st4sd-olm.v{version}"
+    print(f" Setting metadata.name to '{new_name}")
+    csv_data["metadata"]["name"] = new_name
+
+    # Navigate to the st4sd-olm deployment container
+    deployments = csv_data["spec"]["install"]["spec"]["deployments"]
+    st4sd_deployment = None
+    for deployment in deployments:
+        if deployment["name"] == "st4sd-olm":
+            st4sd_deployment = deployment
+            break
+
+    if st4sd_deployment is None:
+        raise ValueError("Could not find st4sd-olm deployment in CSV template")
+
+    container = st4sd_deployment["spec"]["template"]["spec"]["containers"][0]
+
+    # Update container image
+    print(f"  Setting container image to '{img_operator}'")
+    container["image"] = img_operator
+
+    # Update memory settings
+    print(f"  Setting memory limit to '1Gi'")
+    resources = container["resources"]
+    resources["limits"]["memory"] = "1Gi"
+
+    # Write the updated CSV as YAML
     print(f"Writing processed CSV to: {csv_dest}")
     with open(csv_dest, "w") as f:
-        f.write(content)
+        yaml.safe_dump(csv_data, f, default_flow_style=False, sort_keys=False)
 
 
 def run_make_bundle_build(version: str) -> None:
@@ -304,13 +294,6 @@ def main():
         print("ST4SD OLM Bundle Generator")
         print("=" * 60)
 
-        if args.bundle_version:
-            bundle_version = args.bundle_version
-            print(f"Bundle version: {bundle_version} (from command line)")
-        else:
-            bundle_version = get_default_bundle_version()
-            print(f"Bundle version: {bundle_version} (from Chart.yaml)")
-
         if args.olm_version:
             olm_version = args.olm_version
             print(f"OLM version: {olm_version} (from command line)")
@@ -322,7 +305,7 @@ def main():
         print(f"Image prefix: {image_prefix}")
 
         # Construct full image operator URL
-        img_operator = f"{image_prefix}:v{bundle_version}"
+        img_operator = f"{image_prefix}:v{olm_version}"
         print(f"Image operator: {img_operator}")
         print("=" * 60)
         print()

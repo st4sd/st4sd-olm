@@ -17,7 +17,7 @@ metadata:
     operatorframework.io/suggested-namespace: openshift-operators
     operators.operatorframework.io/builder: operator-sdk-v1.26.0
     operators.operatorframework.io/project_layout: go.kubebuilder.io/v3
-  name: st4sd-olm.v0.10.0
+  name: st4sd-olm.v0.10.1
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -451,7 +451,7 @@ spec:
                 - --leader-elect
                 command:
                 - /manager
-                image: quay.io/st4sd/official-base/st4sd-olm:v0.10.0
+                image: quay.io/st4sd/official-base/st4sd-olm:v0.10.1
                 imagePullPolicy: Always
                 livenessProbe:
                   httpGet:
@@ -507,4 +507,4 @@ spec:
   provider:
     name: IBM Research, Europe - Dublin
     url: st4sd.github.io/overview
-  version: 0.10.0
+  version: 0.10.1
