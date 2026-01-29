@@ -623,7 +623,7 @@ func ConfigurationToHelmValues(
 			"installRegistryBackendConfigMap", "installRegistryUINginxConfigMap",
 			"installWorkflowOperator", "installDatastore", "installRuntimeService",
 			"installRegistryBackend", "installRegistryUI", "installAuthentication",
-			"installRBACNamespaced", "installDeployer",
+			"installRBACNamespaced", "installDeployer", "installRuntimeK8s",
 		)
 	case RELEASE_NAMESPACED_UNMANAGED:
 		switchOn = append(switchOn,
@@ -634,7 +634,7 @@ func ConfigurationToHelmValues(
 			"installRBACClusterScoped",
 			"installWorkflowOperator", "installDatastore", "installRuntimeService",
 			"installRegistryBackend", "installRegistryUI", "installAuthentication",
-			"installRBACNamespaced", "installDeployer",
+			"installRBACNamespaced", "installDeployer", "installRuntimeK8s",
 		)
 		// VV: st4sd-deployment pushes 2 sets of images for each release:
 		// :platform-release-latest and :bundle-${HELM_CHART_VERSION}
@@ -646,7 +646,7 @@ func ConfigurationToHelmValues(
 		switchOn = append(switchOn,
 			"installWorkflowOperator", "installDatastore", "installRuntimeService",
 			"installRegistryBackend", "installRegistryUI", "installAuthentication",
-			"installRBACNamespaced", "installDeployer",
+			"installRBACNamespaced", "installDeployer", "installRuntimeK8s",
 		)
 		switchOff = append(switchOff,
 			"installRBACClusterScoped",
@@ -670,7 +670,11 @@ func ConfigurationToHelmValues(
 		values["backendEnableLocalGraphLibraryWriteAccess"] = false
 		values["backendEnableCanvas"] = true
 
-		switchOff = append(switchOff, "installWorkflowOperator", "installDatastore")
+		// VV: When deploying ST4SD in PublicCatalog mode disable:
+		// - Running experiments
+		// - Recording data in the Datastore
+		// Avoids waisting computational resources for switched off features
+		switchOff = append(switchOff, "installRuntimeK8s", "installDatastore")
 	}
 
 	for _, k := range switchOn {
